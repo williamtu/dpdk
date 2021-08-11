@@ -540,7 +540,7 @@ rte_efd_create(const char *name, uint32_t max_num_rules, uint32_t key_len,
 	 * Guarantee there's no existing: this is normally already checked
 	 * by ring creation above
 	 */
-	TAILQ_FOREACH(te, efd_list, next)
+	RTE_TAILQ_FOREACH(te, efd_list, next)
 	{
 		table = (struct rte_efd_table *) te->data;
 		if (strncmp(name, table->name, RTE_EFD_NAMESIZE) == 0)
@@ -728,7 +728,7 @@ rte_efd_find_existing(const char *name)
 
 	rte_mcfg_tailq_read_lock();
 
-	TAILQ_FOREACH(te, efd_list, next)
+	RTE_TAILQ_FOREACH(te, efd_list, next)
 	{
 		table = (struct rte_efd_table *) te->data;
 		if (strncmp(name, table->name, RTE_EFD_NAMESIZE) == 0)
@@ -759,7 +759,7 @@ rte_efd_free(struct rte_efd_table *table)
 	efd_list = RTE_TAILQ_CAST(rte_efd_tailq.head, rte_efd_list);
 	rte_mcfg_tailq_write_lock();
 
-	TAILQ_FOREACH_SAFE(te, efd_list, next, temp) {
+	RTE_TAILQ_FOREACH_SAFE(te, efd_list, next, temp) {
 		if (te->data == (void *) table) {
 			TAILQ_REMOVE(efd_list, te, next);
 			rte_free(te);

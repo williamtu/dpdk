@@ -13,7 +13,7 @@
 int
 softnic_swq_init(struct pmd_internals *p)
 {
-	TAILQ_INIT(&p->swq_list);
+	RTE_TAILQ_INIT(&p->swq_list);
 
 	return 0;
 }
@@ -24,11 +24,11 @@ softnic_swq_free(struct pmd_internals *p)
 	for ( ; ; ) {
 		struct softnic_swq *swq;
 
-		swq = TAILQ_FIRST(&p->swq_list);
+		swq = RTE_TAILQ_FIRST(&p->swq_list);
 		if (swq == NULL)
 			break;
 
-		TAILQ_REMOVE(&p->swq_list, swq, node);
+		RTE_TAILQ_REMOVE(&p->swq_list, swq, node);
 		rte_ring_free(swq->r);
 		free(swq);
 	}
@@ -39,12 +39,12 @@ softnic_softnic_swq_free_keep_rxq_txq(struct pmd_internals *p)
 {
 	struct softnic_swq *swq, *tswq;
 
-	TAILQ_FOREACH_SAFE(swq, &p->swq_list, node, tswq) {
+	RTE_TAILQ_FOREACH_SAFE(swq, &p->swq_list, node, tswq) {
 		if ((strncmp(swq->name, "RXQ", strlen("RXQ")) == 0) ||
 			(strncmp(swq->name, "TXQ", strlen("TXQ")) == 0))
 			continue;
 
-		TAILQ_REMOVE(&p->swq_list, swq, node);
+		RTE_TAILQ_REMOVE(&p->swq_list, swq, node);
 		rte_ring_free(swq->r);
 		free(swq);
 	}
@@ -59,7 +59,7 @@ softnic_swq_find(struct pmd_internals *p,
 	if (name == NULL)
 		return NULL;
 
-	TAILQ_FOREACH(swq, &p->swq_list, node)
+	RTE_TAILQ_FOREACH(swq, &p->swq_list, node)
 		if (strcmp(swq->name, name) == 0)
 			return swq;
 
@@ -108,7 +108,7 @@ softnic_swq_create(struct pmd_internals *p,
 	swq->r = r;
 
 	/* Node add to list */
-	TAILQ_INSERT_TAIL(&p->swq_list, swq, node);
+	RTE_TAILQ_INSERT_TAIL(&p->swq_list, swq, node);
 
 	return swq;
 }

@@ -4,7 +4,6 @@
 
 #include <stddef.h>
 #include <string.h>
-#include <sys/queue.h>
 
 #include <rte_errno.h>
 #include <rte_malloc.h>
@@ -106,7 +105,7 @@ bond_flow_create(struct rte_eth_dev *dev, const struct rte_flow_attr *attr,
 			goto err;
 		}
 	}
-	TAILQ_INSERT_TAIL(&internals->flow_list, flow, next);
+	RTE_TAILQ_INSERT_TAIL(&internals->flow_list, flow, next);
 	return flow;
 err:
 	/* Destroy all slaves flows. */
@@ -140,7 +139,7 @@ bond_flow_destroy(struct rte_eth_dev *dev, struct rte_flow *flow,
 			ret = lret;
 		}
 	}
-	TAILQ_REMOVE(&internals->flow_list, flow, next);
+	RTE_TAILQ_REMOVE(&internals->flow_list, flow, next);
 	bond_flow_release(&flow);
 	return ret;
 }
@@ -157,7 +156,7 @@ bond_flow_flush(struct rte_eth_dev *dev, struct rte_flow_error *err)
 	/* Destroy all bond flows from its slaves instead of flushing them to
 	 * keep the LACP flow or any other external flows.
 	 */
-	TAILQ_FOREACH_SAFE(flow, &internals->flow_list, next, tmp) {
+	RTE_TAILQ_FOREACH_SAFE(flow, &internals->flow_list, next, tmp) {
 		lret = bond_flow_destroy(dev, flow, err);
 		if (unlikely(lret != 0))
 			ret = lret;

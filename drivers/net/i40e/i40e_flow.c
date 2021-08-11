@@ -2,7 +2,6 @@
  * Copyright(c) 2016-2017 Intel Corporation
  */
 
-#include <sys/queue.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdint.h>
@@ -3305,7 +3304,7 @@ i40e_flow_parse_fdir_filter(struct rte_eth_dev *dev,
 	}
 
 	/* If create the first fdir rule, enable fdir check for rx queues */
-	if (TAILQ_EMPTY(&pf->fdir.fdir_list))
+	if (RTE_TAILQ_EMPTY(&pf->fdir.fdir_list))
 		i40e_fdir_rx_proc_enable(dev, 1);
 
 	return 0;
@@ -4661,7 +4660,7 @@ i40e_flow_create(struct rte_eth_dev *dev,
 					&cons_filter.ethertype_filter, 1);
 		if (ret)
 			goto free_flow;
-		flow->rule = TAILQ_LAST(&pf->ethertype.ethertype_list,
+		flow->rule = RTE_TAILQ_LAST(&pf->ethertype.ethertype_list,
 					i40e_ethertype_filter_list);
 		break;
 	case RTE_ETH_FILTER_FDIR:
@@ -4669,7 +4668,7 @@ i40e_flow_create(struct rte_eth_dev *dev,
 			       &cons_filter.fdir_filter, 1);
 		if (ret)
 			goto free_flow;
-		flow->rule = TAILQ_LAST(&pf->fdir.fdir_list,
+		flow->rule = RTE_TAILQ_LAST(&pf->fdir.fdir_list,
 					i40e_fdir_filter_list);
 		break;
 	case RTE_ETH_FILTER_TUNNEL:
@@ -4677,14 +4676,14 @@ i40e_flow_create(struct rte_eth_dev *dev,
 			    &cons_filter.consistent_tunnel_filter, 1);
 		if (ret)
 			goto free_flow;
-		flow->rule = TAILQ_LAST(&pf->tunnel.tunnel_list,
+		flow->rule = RTE_TAILQ_LAST(&pf->tunnel.tunnel_list,
 					i40e_tunnel_filter_list);
 		break;
 	case RTE_ETH_FILTER_HASH:
 		ret = i40e_hash_filter_create(pf, &cons_filter.rss_conf);
 		if (ret)
 			goto free_flow;
-		flow->rule = TAILQ_LAST(&pf->rss_config_list,
+		flow->rule = RTE_TAILQ_LAST(&pf->rss_config_list,
 					i40e_rss_conf_list);
 		break;
 	default:
@@ -4692,7 +4691,7 @@ i40e_flow_create(struct rte_eth_dev *dev,
 	}
 
 	flow->filter_type = cons_filter_type;
-	TAILQ_INSERT_TAIL(&pf->flow_list, flow, node);
+	RTE_TAILQ_INSERT_TAIL(&pf->flow_list, flow, node);
 	return flow;
 
 free_flow:
@@ -4733,7 +4732,7 @@ i40e_flow_destroy(struct rte_eth_dev *dev,
 				0);
 
 		/* If the last flow is destroyed, disable fdir. */
-		if (!ret && TAILQ_EMPTY(&pf->fdir.fdir_list)) {
+		if (!ret && RTE_TAILQ_EMPTY(&pf->fdir.fdir_list)) {
 			i40e_fdir_rx_proc_enable(dev, 0);
 		}
 		break;
@@ -4748,7 +4747,7 @@ i40e_flow_destroy(struct rte_eth_dev *dev,
 	}
 
 	if (!ret) {
-		TAILQ_REMOVE(&pf->flow_list, flow, node);
+		RTE_TAILQ_REMOVE(&pf->flow_list, flow, node);
 		if (filter_type == RTE_ETH_FILTER_FDIR)
 			i40e_fdir_entry_pool_put(fdir_info, flow);
 		else
@@ -4909,7 +4908,7 @@ i40e_flow_flush_fdir_filter(struct i40e_pf *pf)
 	ret = i40e_fdir_flush(dev);
 	if (!ret) {
 		/* Delete FDIR filters in FDIR list. */
-		while ((fdir_filter = TAILQ_FIRST(&fdir_info->fdir_list))) {
+		while ((fdir_filter = RTE_TAILQ_FIRST(&fdir_info->fdir_list))) {
 			ret = i40e_sw_fdir_filter_del(pf,
 						      &fdir_filter->fdir.input);
 			if (ret < 0)
@@ -4917,9 +4916,9 @@ i40e_flow_flush_fdir_filter(struct i40e_pf *pf)
 		}
 
 		/* Delete FDIR flows in flow list. */
-		TAILQ_FOREACH_SAFE(flow, &pf->flow_list, node, temp) {
+		RTE_TAILQ_FOREACH_SAFE(flow, &pf->flow_list, node, temp) {
 			if (flow->filter_type == RTE_ETH_FILTER_FDIR) {
-				TAILQ_REMOVE(&pf->flow_list, flow, node);
+				RTE_TAILQ_REMOVE(&pf->flow_list, flow, node);
 			}
 		}
 
@@ -4965,16 +4964,16 @@ i40e_flow_flush_ethertype_filter(struct i40e_pf *pf)
 	void *temp;
 	int ret = 0;
 
-	while ((filter = TAILQ_FIRST(ethertype_list))) {
+	while ((filter = RTE_TAILQ_FIRST(ethertype_list))) {
 		ret = i40e_flow_destroy_ethertype_filter(pf, filter);
 		if (ret)
 			return ret;
 	}
 
 	/* Delete ethertype flows in flow list. */
-	TAILQ_FOREACH_SAFE(flow, &pf->flow_list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(flow, &pf->flow_list, node, temp) {
 		if (flow->filter_type == RTE_ETH_FILTER_ETHERTYPE) {
-			TAILQ_REMOVE(&pf->flow_list, flow, node);
+			RTE_TAILQ_REMOVE(&pf->flow_list, flow, node);
 			rte_free(flow);
 		}
 	}
@@ -4993,16 +4992,16 @@ i40e_flow_flush_tunnel_filter(struct i40e_pf *pf)
 	void *temp;
 	int ret = 0;
 
-	while ((filter = TAILQ_FIRST(tunnel_list))) {
+	while ((filter = RTE_TAILQ_FIRST(tunnel_list))) {
 		ret = i40e_flow_destroy_tunnel_filter(pf, filter);
 		if (ret)
 			return ret;
 	}
 
 	/* Delete tunnel flows in flow list. */
-	TAILQ_FOREACH_SAFE(flow, &pf->flow_list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(flow, &pf->flow_list, node, temp) {
 		if (flow->filter_type == RTE_ETH_FILTER_TUNNEL) {
-			TAILQ_REMOVE(&pf->flow_list, flow, node);
+			RTE_TAILQ_REMOVE(&pf->flow_list, flow, node);
 			rte_free(flow);
 		}
 	}

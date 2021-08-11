@@ -61,7 +61,7 @@ dpaa2_get_mcp_ptr(int portal_idx)
 }
 
 static struct rte_dpaa2_object_list dpaa2_obj_list =
-	TAILQ_HEAD_INITIALIZER(dpaa2_obj_list);
+	RTE_TAILQ_HEAD_INITIALIZER(dpaa2_obj_list);
 
 /*register a fslmc bus based dpaa2 driver */
 void
@@ -69,7 +69,7 @@ rte_fslmc_object_register(struct rte_dpaa2_object *object)
 {
 	RTE_VERIFY(object);
 
-	TAILQ_INSERT_TAIL(&dpaa2_obj_list, object, next);
+	RTE_TAILQ_INSERT_TAIL(&dpaa2_obj_list, object, next);
 }
 
 int
@@ -720,7 +720,7 @@ fslmc_process_iodevices(struct rte_dpaa2_device *dev)
 	case DPAA2_BPOOL:
 	case DPAA2_DPRTC:
 	case DPAA2_MUX:
-		TAILQ_FOREACH(object, &dpaa2_obj_list, next) {
+		RTE_TAILQ_FOREACH(object, &dpaa2_obj_list, next) {
 			if (dev->dev_type == object->dev_type)
 				object->create(dev_fd, &device_info,
 					       dev->object_id);
@@ -808,7 +808,7 @@ fslmc_vfio_process_group(void)
 	bool is_dpmcp_in_blocklist = false, is_dpio_in_blocklist = false;
 	int dpmcp_count = 0, dpio_count = 0, current_device;
 
-	TAILQ_FOREACH_SAFE(dev, &rte_fslmc_bus.device_list, next, dev_temp) {
+	RTE_TAILQ_FOREACH_SAFE(dev, &rte_fslmc_bus.device_list, next, dev_temp) {
 		if (dev->dev_type == DPAA2_MPORTAL) {
 			dpmcp_count++;
 			if (dev->device.devargs &&
@@ -825,14 +825,14 @@ fslmc_vfio_process_group(void)
 
 	/* Search the MCP as that should be initialized first. */
 	current_device = 0;
-	TAILQ_FOREACH_SAFE(dev, &rte_fslmc_bus.device_list, next, dev_temp) {
+	RTE_TAILQ_FOREACH_SAFE(dev, &rte_fslmc_bus.device_list, next, dev_temp) {
 		if (dev->dev_type == DPAA2_MPORTAL) {
 			current_device++;
 			if (dev->device.devargs &&
 			    dev->device.devargs->policy == RTE_DEV_BLOCKED) {
 				DPAA2_BUS_LOG(DEBUG, "%s Blocked, skipping",
 					      dev->device.name);
-				TAILQ_REMOVE(&rte_fslmc_bus.device_list,
+				RTE_TAILQ_REMOVE(&rte_fslmc_bus.device_list,
 						dev, next);
 				continue;
 			}
@@ -841,7 +841,7 @@ fslmc_vfio_process_group(void)
 			    !is_dpmcp_in_blocklist) {
 				if (dpmcp_count == 1 ||
 				    current_device != dpmcp_count) {
-					TAILQ_REMOVE(&rte_fslmc_bus.device_list,
+					RTE_TAILQ_REMOVE(&rte_fslmc_bus.device_list,
 						     dev, next);
 					continue;
 				}
@@ -856,7 +856,7 @@ fslmc_vfio_process_group(void)
 				found_mportal = 1;
 			}
 
-			TAILQ_REMOVE(&rte_fslmc_bus.device_list, dev, next);
+			RTE_TAILQ_REMOVE(&rte_fslmc_bus.device_list, dev, next);
 			free(dev);
 			dev = NULL;
 			/* Ideally there is only a single dpmcp, but in case
@@ -872,14 +872,14 @@ fslmc_vfio_process_group(void)
 	}
 
 	current_device = 0;
-	TAILQ_FOREACH_SAFE(dev, &rte_fslmc_bus.device_list, next, dev_temp) {
+	RTE_TAILQ_FOREACH_SAFE(dev, &rte_fslmc_bus.device_list, next, dev_temp) {
 		if (dev->dev_type == DPAA2_IO)
 			current_device++;
 		if (dev->device.devargs &&
 		    dev->device.devargs->policy == RTE_DEV_BLOCKED) {
 			DPAA2_BUS_LOG(DEBUG, "%s Blocked, skipping",
 				      dev->device.name);
-			TAILQ_REMOVE(&rte_fslmc_bus.device_list, dev, next);
+			RTE_TAILQ_REMOVE(&rte_fslmc_bus.device_list, dev, next);
 			continue;
 		}
 		if (rte_eal_process_type() == RTE_PROC_SECONDARY &&
@@ -887,7 +887,7 @@ fslmc_vfio_process_group(void)
 		    dev->dev_type != DPAA2_CRYPTO &&
 		    dev->dev_type != DPAA2_QDMA &&
 		    dev->dev_type != DPAA2_IO) {
-			TAILQ_REMOVE(&rte_fslmc_bus.device_list, dev, next);
+			RTE_TAILQ_REMOVE(&rte_fslmc_bus.device_list, dev, next);
 			continue;
 		}
 		switch (dev->dev_type) {
@@ -929,13 +929,13 @@ fslmc_vfio_process_group(void)
 			if (!is_dpio_in_blocklist && dpio_count > 1) {
 				if (rte_eal_process_type() == RTE_PROC_SECONDARY
 				    && current_device != dpio_count) {
-					TAILQ_REMOVE(&rte_fslmc_bus.device_list,
+					RTE_TAILQ_REMOVE(&rte_fslmc_bus.device_list,
 						     dev, next);
 					break;
 				}
 				if (rte_eal_process_type() == RTE_PROC_PRIMARY
 				    && current_device == dpio_count) {
-					TAILQ_REMOVE(&rte_fslmc_bus.device_list,
+					RTE_TAILQ_REMOVE(&rte_fslmc_bus.device_list,
 						     dev, next);
 					break;
 				}
@@ -954,7 +954,7 @@ fslmc_vfio_process_group(void)
 			/* Unknown - ignore */
 			DPAA2_BUS_DEBUG("Found unknown device (%s)",
 					dev->device.name);
-			TAILQ_REMOVE(&rte_fslmc_bus.device_list, dev, next);
+			RTE_TAILQ_REMOVE(&rte_fslmc_bus.device_list, dev, next);
 			free(dev);
 			dev = NULL;
 		}

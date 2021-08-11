@@ -105,17 +105,17 @@ dpaa_add_to_device_list(struct rte_dpaa_device *newdev)
 	struct rte_dpaa_device *dev = NULL;
 	struct rte_dpaa_device *tdev = NULL;
 
-	TAILQ_FOREACH_SAFE(dev, &rte_dpaa_bus.device_list, next, tdev) {
+	RTE_TAILQ_FOREACH_SAFE(dev, &rte_dpaa_bus.device_list, next, tdev) {
 		comp = compare_dpaa_devices(newdev, dev);
 		if (comp < 0) {
-			TAILQ_INSERT_BEFORE(dev, newdev, next);
+			RTE_TAILQ_INSERT_BEFORE(dev, newdev, next);
 			inserted = 1;
 			break;
 		}
 	}
 
 	if (!inserted)
-		TAILQ_INSERT_TAIL(&rte_dpaa_bus.device_list, newdev, next);
+		RTE_TAILQ_INSERT_TAIL(&rte_dpaa_bus.device_list, newdev, next);
 }
 
 /*
@@ -245,8 +245,8 @@ dpaa_clean_device_list(void)
 	struct rte_dpaa_device *dev = NULL;
 	struct rte_dpaa_device *tdev = NULL;
 
-	TAILQ_FOREACH_SAFE(dev, &rte_dpaa_bus.device_list, next, tdev) {
-		TAILQ_REMOVE(&rte_dpaa_bus.device_list, dev, next);
+	RTE_TAILQ_FOREACH_SAFE(dev, &rte_dpaa_bus.device_list, next, tdev) {
+		RTE_TAILQ_REMOVE(&rte_dpaa_bus.device_list, dev, next);
 		free(dev);
 		dev = NULL;
 	}
@@ -470,7 +470,7 @@ rte_dpaa_driver_register(struct rte_dpaa_driver *driver)
 
 	BUS_INIT_FUNC_TRACE();
 
-	TAILQ_INSERT_TAIL(&rte_dpaa_bus.driver_list, driver, next);
+	RTE_TAILQ_INSERT_TAIL(&rte_dpaa_bus.driver_list, driver, next);
 	/* Update Bus references */
 	driver->dpaa_bus = &rte_dpaa_bus;
 }
@@ -485,7 +485,7 @@ rte_dpaa_driver_unregister(struct rte_dpaa_driver *driver)
 
 	dpaa_bus = driver->dpaa_bus;
 
-	TAILQ_REMOVE(&dpaa_bus->driver_list, driver, next);
+	RTE_TAILQ_REMOVE(&dpaa_bus->driver_list, driver, next);
 	/* Update Bus references */
 	driver->dpaa_bus = NULL;
 }
@@ -600,7 +600,7 @@ rte_dpaa_bus_probe(void)
 	process_once = 1;
 
 	/* If no device present on DPAA bus nothing needs to be done */
-	if (TAILQ_EMPTY(&rte_dpaa_bus.device_list))
+	if (RTE_TAILQ_EMPTY(&rte_dpaa_bus.device_list))
 		return 0;
 
 	svr_file = fopen(DPAA_SOC_ID_FILE, "r");
@@ -610,7 +610,7 @@ rte_dpaa_bus_probe(void)
 		fclose(svr_file);
 	}
 
-	TAILQ_FOREACH(dev, &rte_dpaa_bus.device_list, next) {
+	RTE_TAILQ_FOREACH(dev, &rte_dpaa_bus.device_list, next) {
 		if (dev->device_type == FSL_DPAA_ETH) {
 			ret = rte_dpaa_setup_intr(&dev->intr_handle);
 			if (ret)
@@ -622,8 +622,8 @@ rte_dpaa_bus_probe(void)
 	dpaax_iova_table_populate();
 
 	/* For each registered driver, and device, call the driver->probe */
-	TAILQ_FOREACH(dev, &rte_dpaa_bus.device_list, next) {
-		TAILQ_FOREACH(drv, &rte_dpaa_bus.driver_list, next) {
+	RTE_TAILQ_FOREACH(dev, &rte_dpaa_bus.device_list, next) {
+		RTE_TAILQ_FOREACH(drv, &rte_dpaa_bus.driver_list, next) {
 			ret = rte_dpaa_device_match(drv, dev);
 			if (ret)
 				continue;
@@ -673,9 +673,9 @@ rte_dpaa_find_device(const struct rte_device *start, rte_dev_cmp_t cmp,
 
 	if (start != NULL) {
 		dstart = RTE_DEV_TO_DPAA_CONST(start);
-		dev = TAILQ_NEXT(dstart, next);
+		dev = RTE_TAILQ_NEXT(dstart, next);
 	} else {
-		dev = TAILQ_FIRST(&rte_dpaa_bus.device_list);
+		dev = RTE_TAILQ_FIRST(&rte_dpaa_bus.device_list);
 	}
 
 	while (dev != NULL) {
@@ -683,7 +683,7 @@ rte_dpaa_find_device(const struct rte_device *start, rte_dev_cmp_t cmp,
 			DPAA_BUS_DEBUG("Found dev=(%s)\n", dev->device.name);
 			return &dev->device;
 		}
-		dev = TAILQ_NEXT(dev, next);
+		dev = RTE_TAILQ_NEXT(dev, next);
 	}
 
 	DPAA_BUS_DEBUG("Unable to find any device\n");
@@ -742,9 +742,9 @@ dpaa_bus_dev_iterate(const void *start, const char *str,
 
 	if (start != NULL) {
 		dstart = RTE_DEV_TO_DPAA_CONST(start);
-		dev = TAILQ_NEXT(dstart, next);
+		dev = RTE_TAILQ_NEXT(dstart, next);
 	} else {
-		dev = TAILQ_FIRST(&rte_dpaa_bus.device_list);
+		dev = RTE_TAILQ_FIRST(&rte_dpaa_bus.device_list);
 	}
 
 	while (dev != NULL) {
@@ -752,7 +752,7 @@ dpaa_bus_dev_iterate(const void *start, const char *str,
 			free(dup);
 			return &dev->device;
 		}
-		dev = TAILQ_NEXT(dev, next);
+		dev = RTE_TAILQ_NEXT(dev, next);
 	}
 
 	free(dup);
@@ -770,8 +770,8 @@ static struct rte_dpaa_bus rte_dpaa_bus = {
 		.unplug = dpaa_bus_unplug,
 		.dev_iterate = dpaa_bus_dev_iterate,
 	},
-	.device_list = TAILQ_HEAD_INITIALIZER(rte_dpaa_bus.device_list),
-	.driver_list = TAILQ_HEAD_INITIALIZER(rte_dpaa_bus.driver_list),
+	.device_list = RTE_TAILQ_HEAD_INITIALIZER(rte_dpaa_bus.device_list),
+	.driver_list = RTE_TAILQ_HEAD_INITIALIZER(rte_dpaa_bus.driver_list),
 	.device_count = 0,
 };
 

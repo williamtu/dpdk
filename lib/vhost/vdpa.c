@@ -9,7 +9,6 @@
  */
 
 #include <stdbool.h>
-#include <sys/queue.h>
 
 #include <rte_class.h>
 #include <rte_malloc.h>
@@ -21,10 +20,10 @@
 #include "vhost.h"
 
 /** Double linked list of vDPA devices. */
-TAILQ_HEAD(vdpa_device_list, rte_vdpa_device);
+RTE_TAILQ_HEAD(vdpa_device_list, rte_vdpa_device);
 
 static struct vdpa_device_list vdpa_device_list =
-		TAILQ_HEAD_INITIALIZER(vdpa_device_list);
+		RTE_TAILQ_HEAD_INITIALIZER(vdpa_device_list);
 static rte_spinlock_t vdpa_device_list_lock = RTE_SPINLOCK_INITIALIZER;
 
 
@@ -101,7 +100,7 @@ rte_vdpa_register_device(struct rte_device *rte_dev,
 
 	dev->device = rte_dev;
 	dev->ops = ops;
-	TAILQ_INSERT_TAIL(&vdpa_device_list, dev, next);
+	RTE_TAILQ_INSERT_TAIL(&vdpa_device_list, dev, next);
 out_unlock:
 	rte_spinlock_unlock(&vdpa_device_list_lock);
 
@@ -115,11 +114,11 @@ rte_vdpa_unregister_device(struct rte_vdpa_device *dev)
 	int ret = -1;
 
 	rte_spinlock_lock(&vdpa_device_list_lock);
-	TAILQ_FOREACH_SAFE(cur_dev, &vdpa_device_list, next, tmp_dev) {
+	RTE_TAILQ_FOREACH_SAFE(cur_dev, &vdpa_device_list, next, tmp_dev) {
 		if (dev != cur_dev)
 			continue;
 
-		TAILQ_REMOVE(&vdpa_device_list, dev, next);
+		RTE_TAILQ_REMOVE(&vdpa_device_list, dev, next);
 		rte_free(dev);
 		ret = 0;
 		break;
@@ -317,15 +316,15 @@ vdpa_find_device(const struct rte_vdpa_device *start, rte_vdpa_cmp_t cmp,
 
 	rte_spinlock_lock(&vdpa_device_list_lock);
 	if (start == NULL)
-		dev = TAILQ_FIRST(&vdpa_device_list);
+		dev = RTE_TAILQ_FIRST(&vdpa_device_list);
 	else
-		dev = TAILQ_NEXT(start, next);
+		dev = RTE_TAILQ_NEXT(start, next);
 
 	while (dev != NULL) {
 		if (cmp(dev, rte_dev) == 0)
 			break;
 
-		dev = TAILQ_NEXT(dev, next);
+		dev = RTE_TAILQ_NEXT(dev, next);
 	}
 	rte_spinlock_unlock(&vdpa_device_list_lock);
 

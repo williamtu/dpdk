@@ -1007,7 +1007,7 @@ i40e_init_ethtype_filter_list(struct rte_eth_dev *dev)
 	};
 
 	/* Initialize ethertype filter rule list and hash */
-	TAILQ_INIT(&ethertype_rule->ethertype_list);
+	RTE_TAILQ_INIT(&ethertype_rule->ethertype_list);
 	snprintf(ethertype_hash_name, RTE_HASH_NAMESIZE,
 		 "ethertype_%s", dev->device->name);
 	ethertype_rule->hash_table = rte_hash_create(&ethertype_hash_params);
@@ -1052,7 +1052,7 @@ i40e_init_tunnel_filter_list(struct rte_eth_dev *dev)
 	};
 
 	/* Initialize tunnel filter rule list and hash */
-	TAILQ_INIT(&tunnel_rule->tunnel_list);
+	RTE_TAILQ_INIT(&tunnel_rule->tunnel_list);
 	snprintf(tunnel_hash_name, RTE_HASH_NAMESIZE,
 		 "tunnel_%s", dev->device->name);
 	tunnel_rule->hash_table = rte_hash_create(&tunnel_hash_params);
@@ -1105,7 +1105,7 @@ i40e_init_fdir_filter_list(struct rte_eth_dev *dev)
 	};
 
 	/* Initialize flow director filter rule list and hash */
-	TAILQ_INIT(&fdir_info->fdir_list);
+	RTE_TAILQ_INIT(&fdir_info->fdir_list);
 	snprintf(fdir_hash_name, RTE_HASH_NAMESIZE,
 		 "fdir_%s", dev->device->name);
 	fdir_info->hash_table = rte_hash_create(&fdir_hash_params);
@@ -1727,10 +1727,10 @@ eth_i40e_dev_init(struct rte_eth_dev *dev, void *init_params __rte_unused)
 	i40e_aq_set_mac_config(hw, I40E_FRAME_SIZE_MAX, TRUE, false, 0, NULL);
 
 	/* initialize mirror rule list */
-	TAILQ_INIT(&pf->mirror_list);
+	RTE_TAILQ_INIT(&pf->mirror_list);
 
 	/* initialize RSS rule list */
-	TAILQ_INIT(&pf->rss_config_list);
+	RTE_TAILQ_INIT(&pf->rss_config_list);
 
 	/* initialize Traffic Manager configuration */
 	i40e_tm_conf_init(dev);
@@ -1799,8 +1799,8 @@ i40e_rm_ethtype_filter_list(struct i40e_pf *pf)
 	if (ethertype_rule->hash_table)
 		rte_hash_free(ethertype_rule->hash_table);
 
-	while ((p_ethertype = TAILQ_FIRST(&ethertype_rule->ethertype_list))) {
-		TAILQ_REMOVE(&ethertype_rule->ethertype_list,
+	while ((p_ethertype = RTE_TAILQ_FIRST(&ethertype_rule->ethertype_list))) {
+		RTE_TAILQ_REMOVE(&ethertype_rule->ethertype_list,
 			     p_ethertype, rules);
 		rte_free(p_ethertype);
 	}
@@ -1819,8 +1819,8 @@ i40e_rm_tunnel_filter_list(struct i40e_pf *pf)
 	if (tunnel_rule->hash_table)
 		rte_hash_free(tunnel_rule->hash_table);
 
-	while ((p_tunnel = TAILQ_FIRST(&tunnel_rule->tunnel_list))) {
-		TAILQ_REMOVE(&tunnel_rule->tunnel_list, p_tunnel, rules);
+	while ((p_tunnel = RTE_TAILQ_FIRST(&tunnel_rule->tunnel_list))) {
+		RTE_TAILQ_REMOVE(&tunnel_rule->tunnel_list, p_tunnel, rules);
 		rte_free(p_tunnel);
 	}
 }
@@ -1834,8 +1834,8 @@ i40e_rm_fdir_filter_list(struct i40e_pf *pf)
 	fdir_info = &pf->fdir;
 
 	/* Remove all flow director rules */
-	while ((p_fdir = TAILQ_FIRST(&fdir_info->fdir_list)))
-		TAILQ_REMOVE(&fdir_info->fdir_list, p_fdir, rules);
+	while ((p_fdir = RTE_TAILQ_FIRST(&fdir_info->fdir_list)))
+		RTE_TAILQ_REMOVE(&fdir_info->fdir_list, p_fdir, rules);
 }
 
 static void
@@ -1958,7 +1958,7 @@ i40e_dev_configure(struct rte_eth_dev *dev)
 		}
 	}
 
-	TAILQ_INIT(&pf->flow_list);
+	RTE_TAILQ_INIT(&pf->flow_list);
 
 	return 0;
 
@@ -2619,7 +2619,7 @@ i40e_dev_close(struct rte_eth_dev *dev)
 	ret = i40e_dev_stop(dev);
 
 	/* Remove all mirror rules */
-	while ((p_mirror = TAILQ_FIRST(&pf->mirror_list))) {
+	while ((p_mirror = RTE_TAILQ_FIRST(&pf->mirror_list))) {
 		ret = i40e_aq_del_mirror_rule(hw,
 					      pf->main_vsi->veb->seid,
 					      p_mirror->rule_type,
@@ -2632,7 +2632,7 @@ i40e_dev_close(struct rte_eth_dev *dev)
 				    hw->aq.asq_last_status);
 
 		/* remove mirror software resource anyway */
-		TAILQ_REMOVE(&pf->mirror_list, p_mirror, rules);
+		RTE_TAILQ_REMOVE(&pf->mirror_list, p_mirror, rules);
 		rte_free(p_mirror);
 		pf->nb_mirror_rule--;
 	}
@@ -2715,8 +2715,8 @@ i40e_dev_close(struct rte_eth_dev *dev)
 	i40e_rm_fdir_filter_list(pf);
 
 	/* Remove all flows */
-	while ((p_flow = TAILQ_FIRST(&pf->flow_list))) {
-		TAILQ_REMOVE(&pf->flow_list, p_flow, node);
+	while ((p_flow = RTE_TAILQ_FIRST(&pf->flow_list))) {
+		RTE_TAILQ_REMOVE(&pf->flow_list, p_flow, node);
 		/* Do not free FDIR flows since they are static allocated */
 		if (p_flow->filter_type != RTE_ETH_FILTER_FDIR)
 			rte_free(p_flow);
@@ -5329,7 +5329,7 @@ i40e_veb_release(struct i40e_veb *veb)
 	if (veb == NULL)
 		return -EINVAL;
 
-	if (!TAILQ_EMPTY(&veb->head)) {
+	if (!RTE_TAILQ_EMPTY(&veb->head)) {
 		PMD_DRV_LOG(ERR, "VEB still has VSI attached, can't remove");
 		return -EACCES;
 	}
@@ -5373,7 +5373,7 @@ i40e_veb_setup(struct i40e_pf *pf, struct i40e_vsi *vsi)
 
 	veb->associate_vsi = vsi;
 	veb->associate_pf = pf;
-	TAILQ_INIT(&veb->head);
+	RTE_TAILQ_INIT(&veb->head);
 	veb->uplink_seid = vsi ? vsi->uplink_seid : 0;
 
 	/* create floating veb if vsi is NULL */
@@ -5436,7 +5436,7 @@ i40e_vsi_release(struct i40e_vsi *vsi)
 
 	/* VSI has child to attach, release child first */
 	if (vsi->veb) {
-		TAILQ_FOREACH_SAFE(vsi_list, &vsi->veb->head, list, temp) {
+		RTE_TAILQ_FOREACH_SAFE(vsi_list, &vsi->veb->head, list, temp) {
 			if (i40e_vsi_release(vsi_list->vsi) != I40E_SUCCESS)
 				return -1;
 		}
@@ -5444,7 +5444,7 @@ i40e_vsi_release(struct i40e_vsi *vsi)
 	}
 
 	if (vsi->floating_veb) {
-		TAILQ_FOREACH_SAFE(vsi_list, &vsi->floating_veb->head, list, temp) {
+		RTE_TAILQ_FOREACH_SAFE(vsi_list, &vsi->floating_veb->head, list, temp) {
 			if (i40e_vsi_release(vsi_list->vsi) != I40E_SUCCESS)
 				return -1;
 		}
@@ -5452,7 +5452,7 @@ i40e_vsi_release(struct i40e_vsi *vsi)
 
 	/* Remove all macvlan filters of the VSI */
 	i40e_vsi_remove_all_macvlan_filter(vsi);
-	TAILQ_FOREACH_SAFE(f, &vsi->mac_list, next, temp)
+	RTE_TAILQ_FOREACH_SAFE(f, &vsi->mac_list, next, temp)
 		rte_free(f);
 
 	if (vsi->type != I40E_VSI_MAIN &&
@@ -5463,7 +5463,7 @@ i40e_vsi_release(struct i40e_vsi *vsi)
 			PMD_DRV_LOG(ERR, "VSI's parent VSI is NULL");
 			return I40E_ERR_PARAM;
 		}
-		TAILQ_REMOVE(&vsi->parent_vsi->veb->head,
+		RTE_TAILQ_REMOVE(&vsi->parent_vsi->veb->head,
 				&vsi->sib_vsi_list, list);
 
 		/* Remove all switch element of the VSI */
@@ -5480,7 +5480,7 @@ i40e_vsi_release(struct i40e_vsi *vsi)
 			PMD_DRV_LOG(ERR, "VSI's parent VSI is NULL");
 			return I40E_ERR_PARAM;
 		}
-		TAILQ_REMOVE(&vsi->parent_vsi->floating_veb->head,
+		RTE_TAILQ_REMOVE(&vsi->parent_vsi->floating_veb->head,
 			     &vsi->sib_vsi_list, list);
 
 		/* Remove all switch element of the VSI */
@@ -5531,7 +5531,7 @@ i40e_update_default_filter_setting(struct i40e_vsi *vsi)
 		rte_memcpy(&mac->addr_bytes, hw->mac.perm_addr,
 				ETH_ADDR_LEN);
 		f->mac_info.filter_type = I40E_MACVLAN_PERFECT_MATCH;
-		TAILQ_INSERT_TAIL(&vsi->mac_list, f, next);
+		RTE_TAILQ_INSERT_TAIL(&vsi->mac_list, f, next);
 		vsi->mac_num++;
 
 		return ret;
@@ -5705,7 +5705,7 @@ i40e_vsi_setup(struct i40e_pf *pf,
 		PMD_DRV_LOG(ERR, "Failed to allocate memory for vsi");
 		return NULL;
 	}
-	TAILQ_INIT(&vsi->mac_list);
+	RTE_TAILQ_INIT(&vsi->mac_list);
 	vsi->type = type;
 	vsi->adapter = I40E_PF_TO_ADAPTER(pf);
 	vsi->max_macaddrs = I40E_NUM_MACADDR_MAX;
@@ -5994,10 +5994,10 @@ i40e_vsi_setup(struct i40e_pf *pf,
 		vsi->vsi_id = ctxt.vsi_number;
 		vsi->sib_vsi_list.vsi = vsi;
 		if (vsi->type == I40E_VSI_SRIOV && uplink_vsi == NULL) {
-			TAILQ_INSERT_TAIL(&pf->main_vsi->floating_veb->head,
+			RTE_TAILQ_INSERT_TAIL(&pf->main_vsi->floating_veb->head,
 					  &vsi->sib_vsi_list, list);
 		} else {
-			TAILQ_INSERT_TAIL(&uplink_vsi->veb->head,
+			RTE_TAILQ_INSERT_TAIL(&uplink_vsi->veb->head,
 					  &vsi->sib_vsi_list, list);
 		}
 	}
@@ -6055,7 +6055,7 @@ i40e_vsi_config_vlan_filter(struct i40e_vsi *vsi, bool on)
 	i = 0;
 
 	/* Remove all existing mac */
-	TAILQ_FOREACH_SAFE(f, &vsi->mac_list, next, temp) {
+	RTE_TAILQ_FOREACH_SAFE(f, &vsi->mac_list, next, temp) {
 		mac_filter[i] = f->mac_info;
 		ret = i40e_vsi_delete_mac(vsi, &f->mac_info.mac_addr);
 		if (ret) {
@@ -7103,7 +7103,7 @@ i40e_find_mac_filter(struct i40e_vsi *vsi,
 {
 	struct i40e_mac_filter *f;
 
-	TAILQ_FOREACH(f, &vsi->mac_list, next) {
+	RTE_TAILQ_FOREACH(f, &vsi->mac_list, next) {
 		if (rte_is_same_ether_addr(macaddr, &f->mac_info.mac_addr))
 			return f;
 	}
@@ -7229,7 +7229,7 @@ i40e_find_all_mac_for_vlan(struct i40e_vsi *vsi,
 	if (num < vsi->mac_num)
 		return I40E_ERR_PARAM;
 
-	TAILQ_FOREACH(f, &vsi->mac_list, next) {
+	RTE_TAILQ_FOREACH(f, &vsi->mac_list, next) {
 		if (i > num - 1) {
 			PMD_DRV_LOG(ERR, "buffer number not match");
 			return I40E_ERR_PARAM;
@@ -7269,7 +7269,7 @@ i40e_vsi_remove_all_macvlan_filter(struct i40e_vsi *vsi)
 
 	i = 0;
 	if (vsi->vlan_num == 0) {
-		TAILQ_FOREACH(f, &vsi->mac_list, next) {
+		RTE_TAILQ_FOREACH(f, &vsi->mac_list, next) {
 			rte_memcpy(&mv_f[i].macaddr,
 				&f->mac_info.mac_addr, ETH_ADDR_LEN);
 			mv_f[i].filter_type = f->mac_info.filter_type;
@@ -7277,7 +7277,7 @@ i40e_vsi_remove_all_macvlan_filter(struct i40e_vsi *vsi)
 			i++;
 		}
 	} else {
-		TAILQ_FOREACH(f, &vsi->mac_list, next) {
+		RTE_TAILQ_FOREACH(f, &vsi->mac_list, next) {
 			ret = i40e_find_all_vlan_for_mac(vsi,&mv_f[i],
 					vsi->vlan_num, &f->mac_info.mac_addr);
 			if (ret != I40E_SUCCESS)
@@ -7466,7 +7466,7 @@ i40e_vsi_add_mac(struct i40e_vsi *vsi, struct i40e_mac_filter_info *mac_filter)
 	rte_memcpy(&f->mac_info.mac_addr, &mac_filter->mac_addr,
 			ETH_ADDR_LEN);
 	f->mac_info.filter_type = mac_filter->filter_type;
-	TAILQ_INSERT_TAIL(&vsi->mac_list, f, next);
+	RTE_TAILQ_INSERT_TAIL(&vsi->mac_list, f, next);
 	vsi->mac_num++;
 
 	ret = I40E_SUCCESS;
@@ -7525,7 +7525,7 @@ i40e_vsi_delete_mac(struct i40e_vsi *vsi, struct rte_ether_addr *addr)
 		goto DONE;
 
 	/* Remove the mac addr into mac list */
-	TAILQ_REMOVE(&vsi->mac_list, f, next);
+	RTE_TAILQ_REMOVE(&vsi->mac_list, f, next);
 	rte_free(f);
 	vsi->mac_num--;
 
@@ -7835,7 +7835,7 @@ i40e_sw_tunnel_filter_insert(struct i40e_pf *pf,
 	}
 	rule->hash_map[ret] = tunnel_filter;
 
-	TAILQ_INSERT_TAIL(&rule->tunnel_list, tunnel_filter, rules);
+	RTE_TAILQ_INSERT_TAIL(&rule->tunnel_list, tunnel_filter, rules);
 
 	return 0;
 }
@@ -7859,7 +7859,7 @@ i40e_sw_tunnel_filter_del(struct i40e_pf *pf,
 	tunnel_filter = rule->hash_map[ret];
 	rule->hash_map[ret] = NULL;
 
-	TAILQ_REMOVE(&rule->tunnel_list, tunnel_filter, rules);
+	RTE_TAILQ_REMOVE(&rule->tunnel_list, tunnel_filter, rules);
 	rte_free(tunnel_filter);
 
 	return 0;
@@ -9769,7 +9769,7 @@ i40e_sw_ethertype_filter_insert(struct i40e_pf *pf,
 	}
 	rule->hash_map[ret] = filter;
 
-	TAILQ_INSERT_TAIL(&rule->ethertype_list, filter, rules);
+	RTE_TAILQ_INSERT_TAIL(&rule->ethertype_list, filter, rules);
 
 	return 0;
 }
@@ -9794,7 +9794,7 @@ i40e_sw_ethertype_filter_del(struct i40e_pf *pf,
 	filter = rule->hash_map[ret];
 	rule->hash_map[ret] = NULL;
 
-	TAILQ_REMOVE(&rule->ethertype_list, filter, rules);
+	RTE_TAILQ_REMOVE(&rule->ethertype_list, filter, rules);
 	rte_free(filter);
 
 	return 0;
@@ -10373,7 +10373,7 @@ i40e_mirror_rule_set(struct rte_eth_dev *dev,
 
 	seid = pf->main_vsi->veb->seid;
 
-	TAILQ_FOREACH(it, &pf->mirror_list, rules) {
+	RTE_TAILQ_FOREACH(it, &pf->mirror_list, rules) {
 		if (sw_id <= it->index) {
 			mirr_rule = it;
 			break;
@@ -10395,7 +10395,7 @@ i40e_mirror_rule_set(struct rte_eth_dev *dev,
 					ret, hw->aq.asq_last_status);
 				return -ENOSYS;
 			}
-			TAILQ_REMOVE(&pf->mirror_list, mirr_rule, rules);
+			RTE_TAILQ_REMOVE(&pf->mirror_list, mirr_rule, rules);
 			rte_free(mirr_rule);
 			pf->nb_mirror_rule--;
 			return 0;
@@ -10494,9 +10494,9 @@ i40e_mirror_rule_set(struct rte_eth_dev *dev,
 	mirr_rule->dst_vsi_seid = dst_seid;
 
 	if (parent)
-		TAILQ_INSERT_AFTER(&pf->mirror_list, parent, mirr_rule, rules);
+		RTE_TAILQ_INSERT_AFTER(&pf->mirror_list, parent, mirr_rule, rules);
 	else
-		TAILQ_INSERT_HEAD(&pf->mirror_list, mirr_rule, rules);
+		RTE_TAILQ_INSERT_HEAD(&pf->mirror_list, mirr_rule, rules);
 
 	pf->nb_mirror_rule++;
 	return 0;
@@ -10523,7 +10523,7 @@ i40e_mirror_rule_reset(struct rte_eth_dev *dev, uint8_t sw_id)
 
 	seid = pf->main_vsi->veb->seid;
 
-	TAILQ_FOREACH(it, &pf->mirror_list, rules) {
+	RTE_TAILQ_FOREACH(it, &pf->mirror_list, rules) {
 		if (sw_id == it->index) {
 			mirr_rule = it;
 			break;
@@ -10540,7 +10540,7 @@ i40e_mirror_rule_reset(struct rte_eth_dev *dev, uint8_t sw_id)
 				ret, hw->aq.asq_last_status);
 			return -ENOSYS;
 		}
-		TAILQ_REMOVE(&pf->mirror_list, mirr_rule, rules);
+		RTE_TAILQ_REMOVE(&pf->mirror_list, mirr_rule, rules);
 		rte_free(mirr_rule);
 		pf->nb_mirror_rule--;
 	} else {
@@ -11176,7 +11176,7 @@ i40e_dcb_hw_configure(struct i40e_pf *pf,
 	/* Update each VSI */
 	i40e_vsi_config_tc(main_vsi, tc_map);
 	if (main_vsi->veb) {
-		TAILQ_FOREACH(vsi_list, &main_vsi->veb->head, list) {
+		RTE_TAILQ_FOREACH(vsi_list, &main_vsi->veb->head, list) {
 			/* Beside main VSI and VMDQ VSIs, only enable default
 			 * TC for other VSIs
 			 */
@@ -11718,7 +11718,7 @@ static int i40e_set_default_mac_addr(struct rte_eth_dev *dev,
 		return -EINVAL;
 	}
 
-	TAILQ_FOREACH(f, &vsi->mac_list, next) {
+	RTE_TAILQ_FOREACH(f, &vsi->mac_list, next) {
 		if (rte_is_same_ether_addr(&pf->dev_addr,
 						&f->mac_info.mac_addr))
 			break;
@@ -11795,7 +11795,7 @@ i40e_ethertype_filter_restore(struct i40e_pf *pf)
 	struct i40e_control_filter_stats stats;
 	uint16_t flags;
 
-	TAILQ_FOREACH(f, ethertype_list, rules) {
+	RTE_TAILQ_FOREACH(f, ethertype_list, rules) {
 		flags = 0;
 		if (!(f->flags & RTE_ETHTYPE_FLAGS_MAC))
 			flags |= I40E_AQC_ADD_CONTROL_PACKET_FLAGS_IGNORE_MAC;
@@ -11830,7 +11830,7 @@ i40e_tunnel_filter_restore(struct i40e_pf *pf)
 	struct i40e_aqc_cloud_filters_element_bb cld_filter;
 	bool big_buffer = 0;
 
-	TAILQ_FOREACH(f, tunnel_list, rules) {
+	RTE_TAILQ_FOREACH(f, tunnel_list, rules) {
 		if (!f->is_to_vf)
 			vsi = pf->main_vsi;
 		else {

@@ -75,7 +75,7 @@ struct rte_mem_resource {
  * A structure describing a device driver.
  */
 struct rte_driver {
-	TAILQ_ENTRY(rte_driver) next;  /**< Next in list. */
+	RTE_TAILQ_ENTRY(rte_driver) next;  /**< Next in list. */
 	const char *name;                   /**< Driver name. */
 	const char *alias;              /**< Driver alias. */
 };
@@ -90,7 +90,7 @@ struct rte_driver {
  * A structure describing a generic device.
  */
 struct rte_device {
-	TAILQ_ENTRY(rte_device) next; /**< Next device */
+	RTE_TAILQ_ENTRY(rte_device) next; /**< Next device */
 	const char *name;             /**< Device name */
 	const struct rte_driver *driver; /**< Driver assigned after probing */
 	const struct rte_bus *bus;    /**< Bus handle assigned on scan */

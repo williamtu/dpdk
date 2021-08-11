@@ -75,7 +75,7 @@ enum rte_devtype {
  */
 struct rte_devargs {
 	/** Next in list. */
-	TAILQ_ENTRY(rte_devargs) next;
+	RTE_TAILQ_ENTRY(rte_devargs) next;
 	/** Type of device. */
 	enum rte_devtype type;
 	/** Device policy. */

@@ -181,7 +181,7 @@ rte_mempool_obj_iter(struct rte_mempool *mp,
 	void *obj;
 	unsigned n = 0;
 
-	STAILQ_FOREACH(hdr, &mp->elt_list, next) {
+	RTE_STAILQ_FOREACH(hdr, &mp->elt_list, next) {
 		obj = (char *)hdr + sizeof(*hdr);
 		obj_cb(mp, obj_cb_arg, obj, n);
 		n++;
@@ -198,7 +198,7 @@ rte_mempool_mem_iter(struct rte_mempool *mp,
 	struct rte_mempool_memhdr *hdr;
 	unsigned n = 0;
 
-	STAILQ_FOREACH(hdr, &mp->mem_list, next) {
+	RTE_STAILQ_FOREACH(hdr, &mp->mem_list, next) {
 		mem_cb(mp, mem_cb_arg, hdr, n);
 		n++;
 	}
@@ -711,7 +711,7 @@ rte_mempool_free(struct rte_mempool *mp)
 	mempool_list = RTE_TAILQ_CAST(rte_mempool_tailq.head, rte_mempool_list);
 	rte_mcfg_tailq_write_lock();
 	/* find out tailq entry */
-	TAILQ_FOREACH(te, mempool_list, next) {
+	RTE_TAILQ_FOREACH(te, mempool_list, next) {
 		if (te->data == (void *)mp)
 			break;
 	}
@@ -1224,7 +1224,7 @@ rte_mempool_dump(FILE *f, struct rte_mempool *mp)
 	ops = rte_mempool_get_ops(mp->ops_index);
 	fprintf(f, "  ops_name: <%s>\n", (ops != NULL) ? ops->name : "NA");
 
-	STAILQ_FOREACH(memhdr, &mp->mem_list, next)
+	RTE_STAILQ_FOREACH(memhdr, &mp->mem_list, next)
 		mem_len += memhdr->len;
 	if (mem_len != 0) {
 		fprintf(f, "  avg bytes/object=%#Lf\n",
@@ -1290,7 +1290,7 @@ rte_mempool_list_dump(FILE *f)
 
 	rte_mcfg_mempool_read_lock();
 
-	TAILQ_FOREACH(te, mempool_list, next) {
+	RTE_TAILQ_FOREACH(te, mempool_list, next) {
 		mp = (struct rte_mempool *) te->data;
 		rte_mempool_dump(f, mp);
 	}
@@ -1310,7 +1310,7 @@ rte_mempool_lookup(const char *name)
 
 	rte_mcfg_mempool_read_lock();
 
-	TAILQ_FOREACH(te, mempool_list, next) {
+	RTE_TAILQ_FOREACH(te, mempool_list, next) {
 		mp = (struct rte_mempool *) te->data;
 		if (strncmp(name, mp->name, RTE_MEMPOOL_NAMESIZE) == 0)
 			break;
@@ -1337,7 +1337,7 @@ void rte_mempool_walk(void (*func)(struct rte_mempool *, void *),
 
 	rte_mcfg_mempool_read_lock();
 
-	TAILQ_FOREACH_SAFE(te, mempool_list, next, tmp_te) {
+	RTE_TAILQ_FOREACH_SAFE(te, mempool_list, next, tmp_te) {
 		(*func)((struct rte_mempool *) te->data, arg);
 	}
 

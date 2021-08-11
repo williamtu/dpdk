@@ -45,8 +45,8 @@ cleanup_fslmc_device_list(void)
 	struct rte_dpaa2_device *dev;
 	struct rte_dpaa2_device *t_dev;
 
-	TAILQ_FOREACH_SAFE(dev, &rte_fslmc_bus.device_list, next, t_dev) {
-		TAILQ_REMOVE(&rte_fslmc_bus.device_list, dev, next);
+	RTE_TAILQ_FOREACH_SAFE(dev, &rte_fslmc_bus.device_list, next, t_dev) {
+		RTE_TAILQ_REMOVE(&rte_fslmc_bus.device_list, dev, next);
 		free(dev);
 		dev = NULL;
 	}
@@ -82,17 +82,17 @@ insert_in_device_list(struct rte_dpaa2_device *newdev)
 	struct rte_dpaa2_device *dev = NULL;
 	struct rte_dpaa2_device *tdev = NULL;
 
-	TAILQ_FOREACH_SAFE(dev, &rte_fslmc_bus.device_list, next, tdev) {
+	RTE_TAILQ_FOREACH_SAFE(dev, &rte_fslmc_bus.device_list, next, tdev) {
 		comp = compare_dpaa2_devname(newdev, dev);
 		if (comp < 0) {
-			TAILQ_INSERT_BEFORE(dev, newdev, next);
+			RTE_TAILQ_INSERT_BEFORE(dev, newdev, next);
 			inserted = 1;
 			break;
 		}
 	}
 
 	if (!inserted)
-		TAILQ_INSERT_TAIL(&rte_fslmc_bus.device_list, newdev, next);
+		RTE_TAILQ_INSERT_TAIL(&rte_fslmc_bus.device_list, newdev, next);
 }
 
 static struct rte_devargs *
@@ -119,7 +119,7 @@ dump_device_list(void)
 	/* Only if the log level has been set to Debugging, print list */
 	if (rte_log_can_log(dpaa2_logtype_bus, RTE_LOG_DEBUG)) {
 		DPAA2_BUS_LOG(DEBUG, "List of devices scanned on bus:");
-		TAILQ_FOREACH(dev, &rte_fslmc_bus.device_list, next) {
+		RTE_TAILQ_FOREACH(dev, &rte_fslmc_bus.device_list, next) {
 			DPAA2_BUS_LOG(DEBUG, "\t\t%s", dev->device.name);
 		}
 	}
@@ -384,7 +384,7 @@ rte_fslmc_probe(void)
 		.align = __alignof__(dpaa2_seqn_t),
 	};
 
-	if (TAILQ_EMPTY(&rte_fslmc_bus.device_list))
+	if (RTE_TAILQ_EMPTY(&rte_fslmc_bus.device_list))
 		return 0;
 
 	dpaa2_seqn_dynfield_offset =
@@ -438,8 +438,8 @@ rte_fslmc_probe(void)
 	if (rte_eal_iova_mode() == RTE_IOVA_PA)
 		dpaax_iova_table_populate();
 
-	TAILQ_FOREACH(dev, &rte_fslmc_bus.device_list, next) {
-		TAILQ_FOREACH(drv, &rte_fslmc_bus.driver_list, next) {
+	RTE_TAILQ_FOREACH(dev, &rte_fslmc_bus.device_list, next) {
+		RTE_TAILQ_FOREACH(drv, &rte_fslmc_bus.driver_list, next) {
 			ret = rte_fslmc_match(drv, dev);
 			if (ret)
 				continue;
@@ -494,9 +494,9 @@ rte_fslmc_find_device(const struct rte_device *start, rte_dev_cmp_t cmp,
 
 	if (start != NULL) {
 		dstart = RTE_DEV_TO_FSLMC_CONST(start);
-		dev = TAILQ_NEXT(dstart, next);
+		dev = RTE_TAILQ_NEXT(dstart, next);
 	} else {
-		dev = TAILQ_FIRST(&rte_fslmc_bus.device_list);
+		dev = RTE_TAILQ_FIRST(&rte_fslmc_bus.device_list);
 	}
 	while (dev != NULL) {
 		if (cmp(&dev->device, data) == 0) {
@@ -504,7 +504,7 @@ rte_fslmc_find_device(const struct rte_device *start, rte_dev_cmp_t cmp,
 					dev->device.name);
 			return &dev->device;
 		}
-		dev = TAILQ_NEXT(dev, next);
+		dev = RTE_TAILQ_NEXT(dev, next);
 	}
 
 	return NULL;
@@ -516,7 +516,7 @@ rte_fslmc_driver_register(struct rte_dpaa2_driver *driver)
 {
 	RTE_VERIFY(driver);
 
-	TAILQ_INSERT_TAIL(&rte_fslmc_bus.driver_list, driver, next);
+	RTE_TAILQ_INSERT_TAIL(&rte_fslmc_bus.driver_list, driver, next);
 	/* Update Bus references */
 	driver->fslmc_bus = &rte_fslmc_bus;
 }
@@ -535,7 +535,7 @@ rte_fslmc_driver_unregister(struct rte_dpaa2_driver *driver)
 	if (rte_eal_iova_mode() == RTE_IOVA_PA)
 		dpaax_iova_table_depopulate();
 
-	TAILQ_REMOVE(&fslmc_bus->driver_list, driver, next);
+	RTE_TAILQ_REMOVE(&fslmc_bus->driver_list, driver, next);
 	/* Update Bus references */
 	driver->fslmc_bus = NULL;
 }
@@ -550,8 +550,8 @@ fslmc_all_device_support_iova(void)
 	struct rte_dpaa2_device *dev;
 	struct rte_dpaa2_driver *drv;
 
-	TAILQ_FOREACH(dev, &rte_fslmc_bus.device_list, next) {
-		TAILQ_FOREACH(drv, &rte_fslmc_bus.driver_list, next) {
+	RTE_TAILQ_FOREACH(dev, &rte_fslmc_bus.device_list, next) {
+		RTE_TAILQ_FOREACH(drv, &rte_fslmc_bus.driver_list, next) {
 			ret = rte_fslmc_match(drv, dev);
 			if (ret)
 				continue;
@@ -572,7 +572,7 @@ rte_dpaa2_get_iommu_class(void)
 	bool is_vfio_noiommu_enabled = 1;
 	bool has_iova_va;
 
-	if (TAILQ_EMPTY(&rte_fslmc_bus.device_list))
+	if (RTE_TAILQ_EMPTY(&rte_fslmc_bus.device_list))
 		return RTE_IOVA_DC;
 
 #ifdef RTE_LIBRTE_DPAA2_USE_PHYS_IOVA
@@ -632,9 +632,9 @@ fslmc_bus_dev_iterate(const void *start, const char *str,
 
 	if (start != NULL) {
 		dstart = RTE_DEV_TO_FSLMC_CONST(start);
-		dev = TAILQ_NEXT(dstart, next);
+		dev = RTE_TAILQ_NEXT(dstart, next);
 	} else {
-		dev = TAILQ_FIRST(&rte_fslmc_bus.device_list);
+		dev = RTE_TAILQ_FIRST(&rte_fslmc_bus.device_list);
 	}
 
 	while (dev != NULL) {
@@ -642,7 +642,7 @@ fslmc_bus_dev_iterate(const void *start, const char *str,
 			free(dup);
 			return &dev->device;
 		}
-		dev = TAILQ_NEXT(dev, next);
+		dev = RTE_TAILQ_NEXT(dev, next);
 	}
 
 	free(dup);
@@ -660,8 +660,8 @@ struct rte_fslmc_bus rte_fslmc_bus = {
 		.unplug = fslmc_bus_unplug,
 		.dev_iterate = fslmc_bus_dev_iterate,
 	},
-	.device_list = TAILQ_HEAD_INITIALIZER(rte_fslmc_bus.device_list),
-	.driver_list = TAILQ_HEAD_INITIALIZER(rte_fslmc_bus.driver_list),
+	.device_list = RTE_TAILQ_HEAD_INITIALIZER(rte_fslmc_bus.device_list),
+	.driver_list = RTE_TAILQ_HEAD_INITIALIZER(rte_fslmc_bus.driver_list),
 	.device_count = {0},
 };
 

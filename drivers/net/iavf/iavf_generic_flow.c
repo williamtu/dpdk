@@ -2,7 +2,6 @@
  * Copyright(c) 2019 Intel Corporation
  */
 
-#include <sys/queue.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdint.h>
@@ -19,7 +18,7 @@
 #include "iavf_generic_flow.h"
 
 static struct iavf_engine_list engine_list =
-		TAILQ_HEAD_INITIALIZER(engine_list);
+		RTE_TAILQ_HEAD_INITIALIZER(engine_list);
 
 static int iavf_flow_validate(struct rte_eth_dev *dev,
 		const struct rte_flow_attr *attr,
@@ -1621,7 +1620,7 @@ typedef struct iavf_flow_engine * (*parse_engine_t)(struct iavf_adapter *ad,
 void
 iavf_register_flow_engine(struct iavf_flow_engine *engine)
 {
-	TAILQ_INSERT_TAIL(&engine_list, engine, node);
+	RTE_TAILQ_INSERT_TAIL(&engine_list, engine, node);
 }
 
 int
@@ -1632,12 +1631,12 @@ iavf_flow_init(struct iavf_adapter *ad)
 	void *temp;
 	struct iavf_flow_engine *engine;
 
-	TAILQ_INIT(&vf->flow_list);
-	TAILQ_INIT(&vf->rss_parser_list);
-	TAILQ_INIT(&vf->dist_parser_list);
+	RTE_TAILQ_INIT(&vf->flow_list);
+	RTE_TAILQ_INIT(&vf->rss_parser_list);
+	RTE_TAILQ_INIT(&vf->dist_parser_list);
 	rte_spinlock_init(&vf->flow_ops_lock);
 
-	TAILQ_FOREACH_SAFE(engine, &engine_list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(engine, &engine_list, node, temp) {
 		if (engine->init == NULL) {
 			PMD_INIT_LOG(ERR, "Invalid engine type (%d)",
 				     engine->type);
@@ -1663,27 +1662,27 @@ iavf_flow_uninit(struct iavf_adapter *ad)
 	struct iavf_flow_parser_node *p_parser;
 	void *temp;
 
-	TAILQ_FOREACH_SAFE(engine, &engine_list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(engine, &engine_list, node, temp) {
 		if (engine->uninit)
 			engine->uninit(ad);
 	}
 
 	/* Remove all flows */
-	while ((p_flow = TAILQ_FIRST(&vf->flow_list))) {
-		TAILQ_REMOVE(&vf->flow_list, p_flow, node);
+	while ((p_flow = RTE_TAILQ_FIRST(&vf->flow_list))) {
+		RTE_TAILQ_REMOVE(&vf->flow_list, p_flow, node);
 		if (p_flow->engine->free)
 			p_flow->engine->free(p_flow);
 		rte_free(p_flow);
 	}
 
 	/* Cleanup parser list */
-	while ((p_parser = TAILQ_FIRST(&vf->rss_parser_list))) {
-		TAILQ_REMOVE(&vf->rss_parser_list, p_parser, node);
+	while ((p_parser = RTE_TAILQ_FIRST(&vf->rss_parser_list))) {
+		RTE_TAILQ_REMOVE(&vf->rss_parser_list, p_parser, node);
 		rte_free(p_parser);
 	}
 
-	while ((p_parser = TAILQ_FIRST(&vf->dist_parser_list))) {
-		TAILQ_REMOVE(&vf->dist_parser_list, p_parser, node);
+	while ((p_parser = RTE_TAILQ_FIRST(&vf->dist_parser_list))) {
+		RTE_TAILQ_REMOVE(&vf->dist_parser_list, p_parser, node);
 		rte_free(p_parser);
 	}
 }
@@ -1705,10 +1704,10 @@ iavf_register_parser(struct iavf_flow_parser *parser,
 
 	if (parser->engine->type == IAVF_FLOW_ENGINE_HASH) {
 		list = &vf->rss_parser_list;
-		TAILQ_INSERT_TAIL(list, parser_node, node);
+		RTE_TAILQ_INSERT_TAIL(list, parser_node, node);
 	} else if (parser->engine->type == IAVF_FLOW_ENGINE_FDIR) {
 		list = &vf->dist_parser_list;
-		TAILQ_INSERT_HEAD(list, parser_node, node);
+		RTE_TAILQ_INSERT_HEAD(list, parser_node, node);
 	} else {
 		return -EINVAL;
 	}
@@ -1733,9 +1732,9 @@ iavf_unregister_parser(struct iavf_flow_parser *parser,
 	if (list == NULL)
 		return;
 
-	TAILQ_FOREACH_SAFE(p_parser, list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(p_parser, list, node, temp) {
 		if (p_parser->parser->engine->type == parser->engine->type) {
-			TAILQ_REMOVE(list, p_parser, node);
+			RTE_TAILQ_REMOVE(list, p_parser, node);
 			rte_free(p_parser);
 		}
 	}
@@ -1917,7 +1916,7 @@ iavf_parse_engine_create(struct iavf_adapter *ad,
 	void *temp;
 	void *meta = NULL;
 
-	TAILQ_FOREACH_SAFE(parser_node, parser_list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(parser_node, parser_list, node, temp) {
 		if (parser_node->parser->parse_pattern_action(ad,
 				parser_node->parser->array,
 				parser_node->parser->array_len,
@@ -1946,7 +1945,7 @@ iavf_parse_engine_validate(struct iavf_adapter *ad,
 	void *temp;
 	void *meta = NULL;
 
-	TAILQ_FOREACH_SAFE(parser_node, parser_list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(parser_node, parser_list, node, temp) {
 		if (parser_node->parser->parse_pattern_action(ad,
 				parser_node->parser->array,
 				parser_node->parser->array_len,
@@ -2074,7 +2073,7 @@ iavf_flow_create(struct rte_eth_dev *dev,
 	}
 
 	flow->engine = engine;
-	TAILQ_INSERT_TAIL(&vf->flow_list, flow, node);
+	RTE_TAILQ_INSERT_TAIL(&vf->flow_list, flow, node);
 	PMD_DRV_LOG(INFO, "Succeeded to create (%d) flow", engine->type);
 
 free_flow:
@@ -2089,7 +2088,7 @@ iavf_flow_is_valid(struct rte_flow *flow)
 	void *temp;
 
 	if (flow && flow->engine) {
-		TAILQ_FOREACH_SAFE(engine, &engine_list, node, temp) {
+		RTE_TAILQ_FOREACH_SAFE(engine, &engine_list, node, temp) {
 			if (engine == flow->engine)
 				return true;
 		}
@@ -2120,7 +2119,7 @@ iavf_flow_destroy(struct rte_eth_dev *dev,
 	ret = flow->engine->destroy(ad, flow, error);
 
 	if (!ret) {
-		TAILQ_REMOVE(&vf->flow_list, flow, node);
+		RTE_TAILQ_REMOVE(&vf->flow_list, flow, node);
 		rte_free(flow);
 	} else {
 		PMD_DRV_LOG(ERR, "Failed to destroy flow");
@@ -2142,7 +2141,7 @@ iavf_flow_flush(struct rte_eth_dev *dev,
 	void *temp;
 	int ret = 0;
 
-	TAILQ_FOREACH_SAFE(p_flow, &vf->flow_list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(p_flow, &vf->flow_list, node, temp) {
 		ret = iavf_flow_destroy(dev, p_flow, error);
 		if (ret) {
 			PMD_DRV_LOG(ERR, "Failed to flush flows");

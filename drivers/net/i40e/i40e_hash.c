@@ -2,7 +2,6 @@
  * Copyright(c) 2020 Intel Corporation
  */
 
-#include <sys/queue.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdint.h>
@@ -1195,7 +1194,7 @@ i40e_hash_filter_restore(struct i40e_pf *pf)
 	struct i40e_rss_filter *filter;
 	int ret;
 
-	TAILQ_FOREACH(filter, &pf->rss_config_list, next) {
+	RTE_TAILQ_FOREACH(filter, &pf->rss_config_list, next) {
 		struct i40e_rte_flow_rss_conf *rss_conf =
 						&filter->rss_filter_info;
 		struct i40e_rss_filter *prev;
@@ -1214,7 +1213,7 @@ i40e_hash_filter_restore(struct i40e_pf *pf)
 		}
 
 		/* Invalid previous RSS filter */
-		TAILQ_FOREACH(prev, &pf->rss_config_list, next) {
+		RTE_TAILQ_FOREACH(prev, &pf->rss_config_list, next) {
 			if (prev == filter)
 				break;
 			i40e_invalid_rss_filter(rss_conf,
@@ -1258,10 +1257,10 @@ i40e_hash_filter_create(struct i40e_pf *pf,
 	}
 
 	/* Invalid previous RSS filter */
-	TAILQ_FOREACH(prev, &pf->rss_config_list, next)
+	RTE_TAILQ_FOREACH(prev, &pf->rss_config_list, next)
 		i40e_invalid_rss_filter(new_conf, &prev->rss_filter_info);
 
-	TAILQ_INSERT_TAIL(&pf->rss_config_list, filter, next);
+	RTE_TAILQ_INSERT_TAIL(&pf->rss_config_list, filter, next);
 	return 0;
 }
 
@@ -1345,14 +1344,14 @@ i40e_hash_filter_destroy(struct i40e_pf *pf,
 	struct i40e_rss_filter *filter;
 	int ret;
 
-	TAILQ_FOREACH(filter, &pf->rss_config_list, next) {
+	RTE_TAILQ_FOREACH(filter, &pf->rss_config_list, next) {
 		if (rss_filter == filter) {
 			ret = i40e_hash_reset_conf(pf,
 						   &filter->rss_filter_info);
 			if (ret)
 				return ret;
 
-			TAILQ_REMOVE(&pf->rss_config_list, filter, next);
+			RTE_TAILQ_REMOVE(&pf->rss_config_list, filter, next);
 			rte_free(filter);
 			return 0;
 		}
@@ -1366,7 +1365,7 @@ i40e_hash_filter_flush(struct i40e_pf *pf)
 {
 	struct rte_flow *flow, *next;
 
-	TAILQ_FOREACH_SAFE(flow, &pf->flow_list, node, next) {
+	RTE_TAILQ_FOREACH_SAFE(flow, &pf->flow_list, node, next) {
 		if (flow->filter_type != RTE_ETH_FILTER_HASH)
 			continue;
 
@@ -1379,11 +1378,11 @@ i40e_hash_filter_flush(struct i40e_pf *pf)
 			if (ret)
 				return ret;
 
-			TAILQ_REMOVE(&pf->rss_config_list, filter, next);
+			RTE_TAILQ_REMOVE(&pf->rss_config_list, filter, next);
 			rte_free(filter);
 		}
 
-		TAILQ_REMOVE(&pf->flow_list, flow, node);
+		RTE_TAILQ_REMOVE(&pf->flow_list, flow, node);
 		rte_free(flow);
 	}
 

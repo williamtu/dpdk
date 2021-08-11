@@ -28,17 +28,17 @@
 #include "bnxt_tf_pmd_shim.h"
 
 /* Linked list of all TF sessions. */
-STAILQ_HEAD(, bnxt_ulp_session_state) bnxt_ulp_session_list =
-			STAILQ_HEAD_INITIALIZER(bnxt_ulp_session_list);
+RTE_STAILQ_HEAD(, bnxt_ulp_session_state) bnxt_ulp_session_list =
+			RTE_STAILQ_HEAD_INITIALIZER(bnxt_ulp_session_list);
 
 /* Mutex to synchronize bnxt_ulp_session_list operations. */
 static pthread_mutex_t bnxt_ulp_global_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Spin lock to protect context global list */
 rte_spinlock_t bnxt_ulp_ctxt_lock;
-TAILQ_HEAD(cntx_list_entry_list, ulp_context_list_entry);
+RTE_TAILQ_HEAD(cntx_list_entry_list, ulp_context_list_entry);
 static struct cntx_list_entry_list ulp_cntx_list =
-	TAILQ_HEAD_INITIALIZER(ulp_cntx_list);
+	RTE_TAILQ_HEAD_INITIALIZER(ulp_cntx_list);
 
 /* Static function declarations */
 static int32_t bnxt_ulp_cntxt_list_init(void);
@@ -997,7 +997,7 @@ ulp_get_session(struct rte_pci_addr *pci_addr)
 {
 	struct bnxt_ulp_session_state *session;
 
-	STAILQ_FOREACH(session, &bnxt_ulp_session_list, next) {
+	RTE_STAILQ_FOREACH(session, &bnxt_ulp_session_list, next) {
 		if (session->pci_info.domain == pci_addr->domain &&
 		    session->pci_info.bus == pci_addr->bus) {
 			return session;
@@ -1049,7 +1049,7 @@ ulp_session_init(struct bnxt *bp,
 				pthread_mutex_unlock(&bnxt_ulp_global_mutex);
 				return NULL;
 			}
-			STAILQ_INSERT_TAIL(&bnxt_ulp_session_list,
+			RTE_STAILQ_INSERT_TAIL(&bnxt_ulp_session_list,
 					   session, next);
 		}
 	}
@@ -1070,7 +1070,7 @@ ulp_session_deinit(struct bnxt_ulp_session_state *session)
 
 	if (!session->cfg_data) {
 		pthread_mutex_lock(&bnxt_ulp_global_mutex);
-		STAILQ_REMOVE(&bnxt_ulp_session_list, session,
+		RTE_STAILQ_REMOVE(&bnxt_ulp_session_list, session,
 			      bnxt_ulp_session_state, next);
 		pthread_mutex_destroy(&session->bnxt_ulp_mutex);
 		rte_free(session);
@@ -2007,7 +2007,7 @@ bnxt_ulp_cntxt_list_add(struct bnxt_ulp_context *ulp_ctx)
 
 	rte_spinlock_lock(&bnxt_ulp_ctxt_lock);
 	entry->ulp_ctx = ulp_ctx;
-	TAILQ_INSERT_TAIL(&ulp_cntx_list, entry, next);
+	RTE_TAILQ_INSERT_TAIL(&ulp_cntx_list, entry, next);
 	rte_spinlock_unlock(&bnxt_ulp_ctxt_lock);
 	return 0;
 }
@@ -2018,9 +2018,9 @@ bnxt_ulp_cntxt_list_del(struct bnxt_ulp_context *ulp_ctx)
 	struct ulp_context_list_entry	*entry, *temp;
 
 	rte_spinlock_lock(&bnxt_ulp_ctxt_lock);
-	TAILQ_FOREACH_SAFE(entry, &ulp_cntx_list, next, temp) {
+	RTE_TAILQ_FOREACH_SAFE(entry, &ulp_cntx_list, next, temp) {
 		if (entry->ulp_ctx == ulp_ctx) {
-			TAILQ_REMOVE(&ulp_cntx_list, entry, next);
+			RTE_TAILQ_REMOVE(&ulp_cntx_list, entry, next);
 			rte_free(entry);
 			break;
 		}
@@ -2035,7 +2035,7 @@ bnxt_ulp_cntxt_entry_acquire(void)
 
 	/* take a lock and get the first ulp context available */
 	if (rte_spinlock_trylock(&bnxt_ulp_ctxt_lock)) {
-		TAILQ_FOREACH(entry, &ulp_cntx_list, next)
+		RTE_TAILQ_FOREACH(entry, &ulp_cntx_list, next)
 			if (entry->ulp_ctx)
 				return entry->ulp_ctx;
 	}

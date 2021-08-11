@@ -22,11 +22,11 @@
 #include "eal_private.h"
 
 /** user device double-linked queue type definition */
-TAILQ_HEAD(rte_devargs_list, rte_devargs);
+RTE_TAILQ_HEAD(rte_devargs_list, rte_devargs);
 
 /** Global list of user devices */
 static struct rte_devargs_list devargs_list =
-	TAILQ_HEAD_INITIALIZER(devargs_list);
+	RTE_TAILQ_HEAD_INITIALIZER(devargs_list);
 
 static size_t
 devargs_layer_count(const char *s)
@@ -291,7 +291,7 @@ rte_devargs_insert(struct rte_devargs **da)
 	if (*da == NULL || (*da)->bus == NULL)
 		return -1;
 
-	TAILQ_FOREACH_SAFE(listed_da, &devargs_list, next, tmp) {
+	RTE_TAILQ_FOREACH_SAFE(listed_da, &devargs_list, next, tmp) {
 		if (listed_da == *da)
 			/* devargs already in the list */
 			return 0;
@@ -358,7 +358,7 @@ rte_devargs_remove(struct rte_devargs *devargs)
 	if (devargs == NULL || devargs->bus == NULL)
 		return -1;
 
-	TAILQ_FOREACH_SAFE(d, &devargs_list, next, tmp) {
+	RTE_TAILQ_FOREACH_SAFE(d, &devargs_list, next, tmp) {
 		if (strcmp(d->bus->name, devargs->bus->name) == 0 &&
 		    strcmp(d->name, devargs->name) == 0) {
 			TAILQ_REMOVE(&devargs_list, d, next);
@@ -377,7 +377,7 @@ rte_devargs_type_count(enum rte_devtype devtype)
 	struct rte_devargs *devargs;
 	unsigned int count = 0;
 
-	TAILQ_FOREACH(devargs, &devargs_list, next) {
+	RTE_TAILQ_FOREACH(devargs, &devargs_list, next) {
 		if (devargs->type != devtype)
 			continue;
 		count++;
@@ -392,7 +392,7 @@ rte_devargs_dump(FILE *f)
 	struct rte_devargs *devargs;
 
 	fprintf(f, "User device list:\n");
-	TAILQ_FOREACH(devargs, &devargs_list, next) {
+	RTE_TAILQ_FOREACH(devargs, &devargs_list, next) {
 		fprintf(f, "  [%s]: %s %s\n",
 			(devargs->bus ? devargs->bus->name : "??"),
 			devargs->name, devargs->args);

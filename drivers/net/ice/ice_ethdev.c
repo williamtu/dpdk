@@ -832,7 +832,7 @@ ice_find_mac_filter(struct ice_vsi *vsi, struct rte_ether_addr *macaddr)
 {
 	struct ice_mac_filter *f;
 
-	TAILQ_FOREACH(f, &vsi->mac_list, next) {
+	RTE_TAILQ_FOREACH(f, &vsi->mac_list, next) {
 		if (rte_is_same_ether_addr(macaddr, &f->mac_info.mac_addr))
 			return f;
 	}
@@ -889,7 +889,7 @@ ice_add_mac_filter(struct ice_vsi *vsi, struct rte_ether_addr *mac_addr)
 		goto DONE;
 	}
 	rte_ether_addr_copy(mac_addr, &f->mac_info.mac_addr);
-	TAILQ_INSERT_TAIL(&vsi->mac_list, f, next);
+	RTE_TAILQ_INSERT_TAIL(&vsi->mac_list, f, next);
 	vsi->mac_num++;
 
 	ret = 0;
@@ -940,7 +940,7 @@ ice_remove_mac_filter(struct ice_vsi *vsi, struct rte_ether_addr *mac_addr)
 	}
 
 	/* Remove the mac addr from mac list */
-	TAILQ_REMOVE(&vsi->mac_list, f, next);
+	RTE_TAILQ_REMOVE(&vsi->mac_list, f, next);
 	rte_free(f);
 	vsi->mac_num--;
 
@@ -956,7 +956,7 @@ ice_find_vlan_filter(struct ice_vsi *vsi, struct ice_vlan *vlan)
 {
 	struct ice_vlan_filter *f;
 
-	TAILQ_FOREACH(f, &vsi->vlan_list, next) {
+	RTE_TAILQ_FOREACH(f, &vsi->vlan_list, next) {
 		if (vlan->tpid == f->vlan_info.vlan.tpid &&
 		    vlan->vid == f->vlan_info.vlan.vid)
 			return f;
@@ -1025,7 +1025,7 @@ ice_add_vlan_filter(struct ice_vsi *vsi, struct ice_vlan *vlan)
 	}
 	f->vlan_info.vlan.tpid = vlan->tpid;
 	f->vlan_info.vlan.vid = vlan->vid;
-	TAILQ_INSERT_TAIL(&vsi->vlan_list, f, next);
+	RTE_TAILQ_INSERT_TAIL(&vsi->vlan_list, f, next);
 	vsi->vlan_num++;
 
 	ret = 0;
@@ -1083,7 +1083,7 @@ ice_remove_vlan_filter(struct ice_vsi *vsi, struct ice_vlan *vlan)
 	}
 
 	/* Remove the vlan id from vlan list */
-	TAILQ_REMOVE(&vsi->vlan_list, f, next);
+	RTE_TAILQ_REMOVE(&vsi->vlan_list, f, next);
 	rte_free(f);
 	vsi->vlan_num--;
 
@@ -1104,7 +1104,7 @@ ice_remove_all_mac_vlan_filters(struct ice_vsi *vsi)
 	if (!vsi || !vsi->mac_num)
 		return -EINVAL;
 
-	TAILQ_FOREACH_SAFE(m_f, &vsi->mac_list, next, temp) {
+	RTE_TAILQ_FOREACH_SAFE(m_f, &vsi->mac_list, next, temp) {
 		ret = ice_remove_mac_filter(vsi, &m_f->mac_info.mac_addr);
 		if (ret != ICE_SUCCESS) {
 			ret = -EINVAL;
@@ -1115,7 +1115,7 @@ ice_remove_all_mac_vlan_filters(struct ice_vsi *vsi)
 	if (vsi->vlan_num == 0)
 		return 0;
 
-	TAILQ_FOREACH_SAFE(v_f, &vsi->vlan_list, next, temp) {
+	RTE_TAILQ_FOREACH_SAFE(v_f, &vsi->vlan_list, next, temp) {
 		ret = ice_remove_vlan_filter(vsi, &v_f->vlan_info.vlan);
 		if (ret != ICE_SUCCESS) {
 			ret = -EINVAL;
@@ -1446,8 +1446,8 @@ ice_setup_vsi(struct ice_pf *pf, enum ice_vsi_type type)
 	vsi->max_macaddrs = ICE_NUM_MACADDR_MAX;
 	vsi->vlan_anti_spoof_on = 0;
 	vsi->vlan_filter_on = 1;
-	TAILQ_INIT(&vsi->mac_list);
-	TAILQ_INIT(&vsi->vlan_list);
+	RTE_TAILQ_INIT(&vsi->mac_list);
+	RTE_TAILQ_INIT(&vsi->vlan_list);
 
 	/* Be sync with ETH_RSS_RETA_SIZE_x maximum value definition */
 	pf->hash_lut_size = hw->func_caps.common_cap.rss_table_size >
@@ -3792,7 +3792,7 @@ static int ice_macaddr_set(struct rte_eth_dev *dev,
 		return -EINVAL;
 	}
 
-	TAILQ_FOREACH(f, &vsi->mac_list, next) {
+	RTE_TAILQ_FOREACH(f, &vsi->mac_list, next) {
 		if (rte_is_same_ether_addr(&pf->dev_addr, &f->mac_info.mac_addr))
 			break;
 	}

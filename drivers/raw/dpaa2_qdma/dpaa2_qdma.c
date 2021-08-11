@@ -36,9 +36,9 @@ uint32_t dpaa2_coherent_alloc_cache;
 static struct qdma_device q_dev;
 
 /* QDMA H/W queues list */
-TAILQ_HEAD(qdma_hw_queue_list, qdma_hw_queue);
+RTE_TAILQ_HEAD(qdma_hw_queue_list, qdma_hw_queue);
 static struct qdma_hw_queue_list qdma_queue_list
-	= TAILQ_HEAD_INITIALIZER(qdma_queue_list);
+	= RTE_TAILQ_HEAD_INITIALIZER(qdma_queue_list);
 
 /* QDMA per core data */
 static struct qdma_per_core_info qdma_core_info[RTE_MAX_LCORE];
@@ -971,7 +971,7 @@ alloc_hw_queue(uint32_t lcore_id)
 	DPAA2_QDMA_FUNC_TRACE();
 
 	/* Get a free queue from the list */
-	TAILQ_FOREACH(queue, &qdma_queue_list, next) {
+	RTE_TAILQ_FOREACH(queue, &qdma_queue_list, next) {
 		if (queue->num_users == 0) {
 			queue->lcore_id = lcore_id;
 			queue->num_users++;
@@ -1110,7 +1110,7 @@ dpaa2_qdma_reset(struct rte_rawdev *rawdev)
 	}
 
 	/* Reset HW queues */
-	TAILQ_FOREACH(queue, &qdma_queue_list, next)
+	RTE_TAILQ_FOREACH(queue, &qdma_queue_list, next)
 		queue->num_users = 0;
 
 	/* Reset and free virtual queues */
@@ -1591,7 +1591,7 @@ add_hw_queues_to_list(struct dpaa2_dpdmai_dev *dpdmai_dev)
 		queue->dpdmai_dev = dpdmai_dev;
 		queue->queue_id = i;
 
-		TAILQ_INSERT_TAIL(&qdma_queue_list, queue, next);
+		RTE_TAILQ_INSERT_TAIL(&qdma_queue_list, queue, next);
 		dpdmai_dev->qdma_dev->num_hw_queues++;
 	}
 
@@ -1606,9 +1606,9 @@ remove_hw_queues_from_list(struct dpaa2_dpdmai_dev *dpdmai_dev)
 
 	DPAA2_QDMA_FUNC_TRACE();
 
-	TAILQ_FOREACH_SAFE(queue, &qdma_queue_list, next, tqueue) {
+	RTE_TAILQ_FOREACH_SAFE(queue, &qdma_queue_list, next, tqueue) {
 		if (queue->dpdmai_dev == dpdmai_dev) {
-			TAILQ_REMOVE(&qdma_queue_list, queue, next);
+			RTE_TAILQ_REMOVE(&qdma_queue_list, queue, next);
 			rte_free(queue);
 			queue = NULL;
 		}

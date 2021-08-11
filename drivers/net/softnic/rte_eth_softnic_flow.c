@@ -28,7 +28,7 @@ softnic_flow_find(struct softnic_table *table,
 {
 	struct rte_flow *flow;
 
-	TAILQ_FOREACH(flow, &table->flows, node)
+	RTE_TAILQ_FOREACH(flow, &table->flows, node)
 		if (memcmp(&flow->match, rule_match, sizeof(*rule_match)) == 0)
 			return flow;
 
@@ -1965,7 +1965,7 @@ flow_meter_owner_reset(struct pmd_internals *softnic,
 	struct softnic_mtr_list *ml = &softnic->mtr.mtrs;
 	struct softnic_mtr *m;
 
-	TAILQ_FOREACH(m, ml, node)
+	RTE_TAILQ_FOREACH(m, ml, node)
 		if (m->flow == flow) {
 			m->flow = NULL;
 			break;
@@ -2143,7 +2143,7 @@ pmd_flow_create(struct rte_eth_dev *dev,
 
 	/* Flow add to list. */
 	if (new_flow)
-		TAILQ_INSERT_TAIL(&table->flows, flow, node);
+		RTE_TAILQ_INSERT_TAIL(&table->flows, flow, node);
 
 	return flow;
 }
@@ -2184,7 +2184,7 @@ pmd_flow_destroy(struct rte_eth_dev *dev,
 		flow_meter_owner_reset(softnic, flow);
 
 	/* Flow delete. */
-	TAILQ_REMOVE(&table->flows, flow, node);
+	RTE_TAILQ_REMOVE(&table->flows, flow, node);
 	free(flow);
 
 	return 0;
@@ -2199,7 +2199,7 @@ pmd_flow_flush(struct rte_eth_dev *dev,
 	int fail_to_del_rule = 0;
 	uint32_t i;
 
-	TAILQ_FOREACH(pipeline, &softnic->pipeline_list, node) {
+	RTE_TAILQ_FOREACH(pipeline, &softnic->pipeline_list, node) {
 		/* Remove all the flows added to the tables. */
 		for (i = 0; i < pipeline->n_tables; i++) {
 			struct softnic_table *table = &pipeline->table[i];
@@ -2207,7 +2207,7 @@ pmd_flow_flush(struct rte_eth_dev *dev,
 			void *temp;
 			int status;
 
-			TAILQ_FOREACH_SAFE(flow, &table->flows, node, temp) {
+			RTE_TAILQ_FOREACH_SAFE(flow, &table->flows, node, temp) {
 				/* Rule delete. */
 				status = softnic_pipeline_table_rule_delete
 						(softnic,
@@ -2221,7 +2221,7 @@ pmd_flow_flush(struct rte_eth_dev *dev,
 					flow_meter_owner_reset(softnic, flow);
 
 				/* Flow delete. */
-				TAILQ_REMOVE(&table->flows, flow, node);
+				RTE_TAILQ_REMOVE(&table->flows, flow, node);
 				free(flow);
 			}
 		}

@@ -283,7 +283,7 @@ eal_option_device_parse(void)
 	void *tmp;
 	int ret = 0;
 
-	TAILQ_FOREACH_SAFE(devopt, &devopt_list, next, tmp) {
+	RTE_TAILQ_FOREACH_SAFE(devopt, &devopt_list, next, tmp) {
 		if (ret == 0) {
 			ret = rte_devargs_add(devopt->type, devopt->arg);
 			if (ret)
@@ -549,7 +549,7 @@ eal_plugins_init(void)
 			S_ISDIR(sb.st_mode))
 		eal_plugin_add(default_solib_dir);
 
-	TAILQ_FOREACH(solib, &solib_list, next) {
+	RTE_TAILQ_FOREACH(solib, &solib_list, next) {
 
 		if (stat(solib->name, &sb) == 0 && S_ISDIR(sb.st_mode)) {
 			if (eal_plugindir_init(solib->name) == -1) {

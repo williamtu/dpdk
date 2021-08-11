@@ -2,7 +2,6 @@
  * Copyright(c) 2019 Intel Corporation
  */
 
-#include <sys/queue.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdint.h>
@@ -29,7 +28,7 @@
 #define ICE_FLOW_CLASSIFY_STAGE_DISTRIBUTOR 2
 
 static struct ice_engine_list engine_list =
-		TAILQ_HEAD_INITIALIZER(engine_list);
+		RTE_TAILQ_HEAD_INITIALIZER(engine_list);
 
 static int ice_flow_validate(struct rte_eth_dev *dev,
 		const struct rte_flow_attr *attr,
@@ -1803,7 +1802,7 @@ typedef struct ice_flow_engine * (*parse_engine_t)(struct ice_adapter *ad,
 void
 ice_register_flow_engine(struct ice_flow_engine *engine)
 {
-	TAILQ_INSERT_TAIL(&engine_list, engine, node);
+	RTE_TAILQ_INSERT_TAIL(&engine_list, engine, node);
 }
 
 int
@@ -1814,13 +1813,13 @@ ice_flow_init(struct ice_adapter *ad)
 	void *temp;
 	struct ice_flow_engine *engine;
 
-	TAILQ_INIT(&pf->flow_list);
-	TAILQ_INIT(&pf->rss_parser_list);
-	TAILQ_INIT(&pf->perm_parser_list);
-	TAILQ_INIT(&pf->dist_parser_list);
+	RTE_TAILQ_INIT(&pf->flow_list);
+	RTE_TAILQ_INIT(&pf->rss_parser_list);
+	RTE_TAILQ_INIT(&pf->perm_parser_list);
+	RTE_TAILQ_INIT(&pf->dist_parser_list);
 	rte_spinlock_init(&pf->flow_ops_lock);
 
-	TAILQ_FOREACH_SAFE(engine, &engine_list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(engine, &engine_list, node, temp) {
 		if (engine->init == NULL) {
 			PMD_INIT_LOG(ERR, "Invalid engine type (%d)",
 					engine->type);
@@ -1846,32 +1845,32 @@ ice_flow_uninit(struct ice_adapter *ad)
 	struct ice_flow_parser_node *p_parser;
 	void *temp;
 
-	TAILQ_FOREACH_SAFE(engine, &engine_list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(engine, &engine_list, node, temp) {
 		if (engine->uninit)
 			engine->uninit(ad);
 	}
 
 	/* Remove all flows */
-	while ((p_flow = TAILQ_FIRST(&pf->flow_list))) {
-		TAILQ_REMOVE(&pf->flow_list, p_flow, node);
+	while ((p_flow = RTE_TAILQ_FIRST(&pf->flow_list))) {
+		RTE_TAILQ_REMOVE(&pf->flow_list, p_flow, node);
 		if (p_flow->engine->free)
 			p_flow->engine->free(p_flow);
 		rte_free(p_flow);
 	}
 
 	/* Cleanup parser list */
-	while ((p_parser = TAILQ_FIRST(&pf->rss_parser_list))) {
-		TAILQ_REMOVE(&pf->rss_parser_list, p_parser, node);
+	while ((p_parser = RTE_TAILQ_FIRST(&pf->rss_parser_list))) {
+		RTE_TAILQ_REMOVE(&pf->rss_parser_list, p_parser, node);
 		rte_free(p_parser);
 	}
 
-	while ((p_parser = TAILQ_FIRST(&pf->perm_parser_list))) {
-		TAILQ_REMOVE(&pf->perm_parser_list, p_parser, node);
+	while ((p_parser = RTE_TAILQ_FIRST(&pf->perm_parser_list))) {
+		RTE_TAILQ_REMOVE(&pf->perm_parser_list, p_parser, node);
 		rte_free(p_parser);
 	}
 
-	while ((p_parser = TAILQ_FIRST(&pf->dist_parser_list))) {
-		TAILQ_REMOVE(&pf->dist_parser_list, p_parser, node);
+	while ((p_parser = RTE_TAILQ_FIRST(&pf->dist_parser_list))) {
+		RTE_TAILQ_REMOVE(&pf->dist_parser_list, p_parser, node);
 		rte_free(p_parser);
 	}
 }
@@ -1919,15 +1918,15 @@ ice_register_parser(struct ice_flow_parser *parser,
 		return -EINVAL;
 
 	if (ad->devargs.pipe_mode_support) {
-		TAILQ_INSERT_TAIL(list, parser_node, node);
+		RTE_TAILQ_INSERT_TAIL(list, parser_node, node);
 	} else {
 		if (parser->engine->type == ICE_FLOW_ENGINE_SWITCH ||
 				parser->engine->type == ICE_FLOW_ENGINE_HASH)
-			TAILQ_INSERT_TAIL(list, parser_node, node);
+			RTE_TAILQ_INSERT_TAIL(list, parser_node, node);
 		else if (parser->engine->type == ICE_FLOW_ENGINE_FDIR)
-			TAILQ_INSERT_HEAD(list, parser_node, node);
+			RTE_TAILQ_INSERT_HEAD(list, parser_node, node);
 		else if (parser->engine->type == ICE_FLOW_ENGINE_ACL)
-			TAILQ_INSERT_HEAD(list, parser_node, node);
+			RTE_TAILQ_INSERT_HEAD(list, parser_node, node);
 		else
 			return -EINVAL;
 	}
@@ -1946,9 +1945,9 @@ ice_unregister_parser(struct ice_flow_parser *parser,
 	if (list == NULL)
 		return;
 
-	TAILQ_FOREACH_SAFE(p_parser, list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(p_parser, list, node, temp) {
 		if (p_parser->parser->engine->type == parser->engine->type) {
-			TAILQ_REMOVE(list, p_parser, node);
+			RTE_TAILQ_REMOVE(list, p_parser, node);
 			rte_free(p_parser);
 		}
 	}
@@ -2272,7 +2271,7 @@ ice_parse_engine_create(struct ice_adapter *ad,
 	void *meta = NULL;
 	void *temp;
 
-	TAILQ_FOREACH_SAFE(parser_node, parser_list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(parser_node, parser_list, node, temp) {
 		int ret;
 
 		if (parser_node->parser->parse_pattern_action(ad,
@@ -2305,7 +2304,7 @@ ice_parse_engine_validate(struct ice_adapter *ad,
 	struct ice_flow_parser_node *parser_node;
 	void *temp;
 
-	TAILQ_FOREACH_SAFE(parser_node, parser_list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(parser_node, parser_list, node, temp) {
 		if (parser_node->parser->parse_pattern_action(ad,
 				parser_node->parser->array,
 				parser_node->parser->array_len,
@@ -2428,7 +2427,7 @@ ice_flow_create(struct rte_eth_dev *dev,
 	}
 
 	flow->engine = engine;
-	TAILQ_INSERT_TAIL(&pf->flow_list, flow, node);
+	RTE_TAILQ_INSERT_TAIL(&pf->flow_list, flow, node);
 	PMD_DRV_LOG(INFO, "Succeeded to create (%d) flow", engine->type);
 
 out:
@@ -2457,7 +2456,7 @@ ice_flow_destroy(struct rte_eth_dev *dev,
 
 	ret = flow->engine->destroy(ad, flow, error);
 	if (!ret) {
-		TAILQ_REMOVE(&pf->flow_list, flow, node);
+		RTE_TAILQ_REMOVE(&pf->flow_list, flow, node);
 		rte_free(flow);
 	} else {
 		PMD_DRV_LOG(ERR, "Failed to destroy flow");
@@ -2477,7 +2476,7 @@ ice_flow_flush(struct rte_eth_dev *dev,
 	void *temp;
 	int ret = 0;
 
-	TAILQ_FOREACH_SAFE(p_flow, &pf->flow_list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(p_flow, &pf->flow_list, node, temp) {
 		ret = ice_flow_destroy(dev, p_flow, error);
 		if (ret) {
 			PMD_DRV_LOG(ERR, "Failed to flush flows");
@@ -2541,7 +2540,7 @@ ice_flow_redirect(struct ice_adapter *ad,
 
 	rte_spinlock_lock(&pf->flow_ops_lock);
 
-	TAILQ_FOREACH_SAFE(p_flow, &pf->flow_list, node, temp) {
+	RTE_TAILQ_FOREACH_SAFE(p_flow, &pf->flow_list, node, temp) {
 		if (!p_flow->engine->redirect)
 			continue;
 		ret = p_flow->engine->redirect(ad, p_flow, rd);
