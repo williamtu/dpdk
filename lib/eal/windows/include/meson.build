@@ -8,7 +8,3 @@ headers += files(
         'rte_virt2phys.h',
         'rte_windows.h',
 )
-
-sys_headers = []
-subdir('sys')
-install_headers(sys_headers, subdir: 'sys')
