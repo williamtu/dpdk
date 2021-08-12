@@ -308,7 +308,7 @@ rte_devargs_insert(struct rte_devargs **da)
 		}
 	}
 	/* new device in the list */
-	TAILQ_INSERT_TAIL(&devargs_list, *da, next);
+	RTE_TAILQ_INSERT_TAIL(&devargs_list, *da, next);
 	return 0;
 }
 
@@ -337,7 +337,7 @@ rte_devargs_add(enum rte_devtype devtype, const char *devargs_str)
 		else if (devargs->policy == RTE_DEV_BLOCKED)
 			bus->conf.scan_mode = RTE_BUS_SCAN_BLOCKLIST;
 	}
-	TAILQ_INSERT_TAIL(&devargs_list, devargs, next);
+	RTE_TAILQ_INSERT_TAIL(&devargs_list, devargs, next);
 	return 0;
 
 fail:
@@ -361,7 +361,7 @@ rte_devargs_remove(struct rte_devargs *devargs)
 	RTE_TAILQ_FOREACH_SAFE(d, &devargs_list, next, tmp) {
 		if (strcmp(d->bus->name, devargs->bus->name) == 0 &&
 		    strcmp(d->name, devargs->name) == 0) {
-			TAILQ_REMOVE(&devargs_list, d, next);
+			RTE_TAILQ_REMOVE(&devargs_list, d, next);
 			rte_devargs_reset(d);
 			free(d);
 			return 0;
@@ -406,14 +406,14 @@ rte_devargs_next(const char *busname, const struct rte_devargs *start)
 	struct rte_devargs *da;
 
 	if (start != NULL)
-		da = TAILQ_NEXT(start, next);
+		da = RTE_TAILQ_NEXT(start, next);
 	else
-		da = TAILQ_FIRST(&devargs_list);
+		da = RTE_TAILQ_FIRST(&devargs_list);
 	while (da != NULL) {
 		if (busname == NULL ||
 		    (strcmp(busname, da->bus->name) == 0))
 			return da;
-		da = TAILQ_NEXT(da, next);
+		da = RTE_TAILQ_NEXT(da, next);
 	}
 	return NULL;
 }

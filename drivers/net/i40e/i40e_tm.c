@@ -68,12 +68,12 @@ i40e_tm_conf_init(struct rte_eth_dev *dev)
 	struct i40e_pf *pf = I40E_DEV_PRIVATE_TO_PF(dev->data->dev_private);
 
 	/* initialize shaper profile list */
-	TAILQ_INIT(&pf->tm_conf.shaper_profile_list);
+	RTE_TAILQ_INIT(&pf->tm_conf.shaper_profile_list);
 
 	/* initialize node configuration */
 	pf->tm_conf.root = NULL;
-	TAILQ_INIT(&pf->tm_conf.tc_list);
-	TAILQ_INIT(&pf->tm_conf.queue_list);
+	RTE_TAILQ_INIT(&pf->tm_conf.tc_list);
+	RTE_TAILQ_INIT(&pf->tm_conf.queue_list);
 	pf->tm_conf.nb_tc_node = 0;
 	pf->tm_conf.nb_queue_node = 0;
 	pf->tm_conf.committed = false;
@@ -87,13 +87,13 @@ i40e_tm_conf_uninit(struct rte_eth_dev *dev)
 	struct i40e_tm_node *tm_node;
 
 	/* clear node configuration */
-	while ((tm_node = TAILQ_FIRST(&pf->tm_conf.queue_list))) {
-		TAILQ_REMOVE(&pf->tm_conf.queue_list, tm_node, node);
+	while ((tm_node = RTE_TAILQ_FIRST(&pf->tm_conf.queue_list))) {
+		RTE_TAILQ_REMOVE(&pf->tm_conf.queue_list, tm_node, node);
 		rte_free(tm_node);
 	}
 	pf->tm_conf.nb_queue_node = 0;
-	while ((tm_node = TAILQ_FIRST(&pf->tm_conf.tc_list))) {
-		TAILQ_REMOVE(&pf->tm_conf.tc_list, tm_node, node);
+	while ((tm_node = RTE_TAILQ_FIRST(&pf->tm_conf.tc_list))) {
+		RTE_TAILQ_REMOVE(&pf->tm_conf.tc_list, tm_node, node);
 		rte_free(tm_node);
 	}
 	pf->tm_conf.nb_tc_node = 0;
@@ -104,8 +104,8 @@ i40e_tm_conf_uninit(struct rte_eth_dev *dev)
 
 	/* Remove all shaper profiles */
 	while ((shaper_profile =
-	       TAILQ_FIRST(&pf->tm_conf.shaper_profile_list))) {
-		TAILQ_REMOVE(&pf->tm_conf.shaper_profile_list,
+	       RTE_TAILQ_FIRST(&pf->tm_conf.shaper_profile_list))) {
+		RTE_TAILQ_REMOVE(&pf->tm_conf.shaper_profile_list,
 			     shaper_profile, node);
 		rte_free(shaper_profile);
 	}
@@ -208,7 +208,7 @@ i40e_shaper_profile_search(struct rte_eth_dev *dev,
 		&pf->tm_conf.shaper_profile_list;
 	struct i40e_tm_shaper_profile *shaper_profile;
 
-	TAILQ_FOREACH(shaper_profile, shaper_profile_list, node) {
+	RTE_TAILQ_FOREACH(shaper_profile, shaper_profile_list, node) {
 		if (shaper_profile_id == shaper_profile->shaper_profile_id)
 			return shaper_profile;
 	}
@@ -281,7 +281,7 @@ i40e_shaper_profile_add(struct rte_eth_dev *dev,
 	shaper_profile->shaper_profile_id = shaper_profile_id;
 	rte_memcpy(&shaper_profile->profile, profile,
 			 sizeof(struct rte_tm_shaper_params));
-	TAILQ_INSERT_TAIL(&pf->tm_conf.shaper_profile_list,
+	RTE_TAILQ_INSERT_TAIL(&pf->tm_conf.shaper_profile_list,
 			  shaper_profile, node);
 
 	return 0;
@@ -313,7 +313,7 @@ i40e_shaper_profile_del(struct rte_eth_dev *dev,
 		return -EINVAL;
 	}
 
-	TAILQ_REMOVE(&pf->tm_conf.shaper_profile_list, shaper_profile, node);
+	RTE_TAILQ_REMOVE(&pf->tm_conf.shaper_profile_list, shaper_profile, node);
 	rte_free(shaper_profile);
 
 	return 0;
@@ -333,14 +333,14 @@ i40e_tm_node_search(struct rte_eth_dev *dev,
 		return pf->tm_conf.root;
 	}
 
-	TAILQ_FOREACH(tm_node, tc_list, node) {
+	RTE_TAILQ_FOREACH(tm_node, tc_list, node) {
 		if (tm_node->id == node_id) {
 			*node_type = I40E_TM_NODE_TYPE_TC;
 			return tm_node;
 		}
 	}
 
-	TAILQ_FOREACH(tm_node, queue_list, node) {
+	RTE_TAILQ_FOREACH(tm_node, queue_list, node) {
 		if (tm_node->id == node_id) {
 			*node_type = I40E_TM_NODE_TYPE_QUEUE;
 			return tm_node;
@@ -603,11 +603,11 @@ i40e_node_add(struct rte_eth_dev *dev, uint32_t node_id,
 	rte_memcpy(&tm_node->params, params,
 			 sizeof(struct rte_tm_node_params));
 	if (parent_node_type == I40E_TM_NODE_TYPE_PORT) {
-		TAILQ_INSERT_TAIL(&pf->tm_conf.tc_list,
+		RTE_TAILQ_INSERT_TAIL(&pf->tm_conf.tc_list,
 				  tm_node, node);
 		pf->tm_conf.nb_tc_node++;
 	} else {
-		TAILQ_INSERT_TAIL(&pf->tm_conf.queue_list,
+		RTE_TAILQ_INSERT_TAIL(&pf->tm_conf.queue_list,
 				  tm_node, node);
 		pf->tm_conf.nb_queue_node++;
 	}
@@ -674,10 +674,10 @@ i40e_node_delete(struct rte_eth_dev *dev, uint32_t node_id,
 		tm_node->shaper_profile->reference_count--;
 	tm_node->parent->reference_count--;
 	if (node_type == I40E_TM_NODE_TYPE_TC) {
-		TAILQ_REMOVE(&pf->tm_conf.tc_list, tm_node, node);
+		RTE_TAILQ_REMOVE(&pf->tm_conf.tc_list, tm_node, node);
 		pf->tm_conf.nb_tc_node--;
 	} else {
-		TAILQ_REMOVE(&pf->tm_conf.queue_list, tm_node, node);
+		RTE_TAILQ_REMOVE(&pf->tm_conf.queue_list, tm_node, node);
 		pf->tm_conf.nb_queue_node--;
 	}
 	rte_free(tm_node);
@@ -901,7 +901,7 @@ i40e_hierarchy_commit(struct rte_eth_dev *dev,
 		bw = 0;
 	if (bw) {
 		/* check if any TC has a max bandwidth */
-		TAILQ_FOREACH(tm_node, tc_list, node) {
+		RTE_TAILQ_FOREACH(tm_node, tc_list, node) {
 			if (tm_node->shaper_profile &&
 			    tm_node->shaper_profile->profile.peak.rate) {
 				error->type = RTE_TM_ERROR_TYPE_SHAPER_PROFILE;
@@ -930,7 +930,7 @@ i40e_hierarchy_commit(struct rte_eth_dev *dev,
 	memset(&tc_bw, 0, sizeof(tc_bw));
 	tc_bw.tc_valid_bits = vsi->enabled_tc;
 	tc_map = vsi->enabled_tc;
-	TAILQ_FOREACH(tm_node, tc_list, node) {
+	RTE_TAILQ_FOREACH(tm_node, tc_list, node) {
 		if (!tm_node->reference_count) {
 			error->type = RTE_TM_ERROR_TYPE_NODE_PARAMS;
 			error->message = "TC without queue assigned";
@@ -960,7 +960,7 @@ i40e_hierarchy_commit(struct rte_eth_dev *dev,
 		tc_bw.tc_bw_credits[i] = rte_cpu_to_le_16((uint16_t)bw);
 	}
 
-	TAILQ_FOREACH(tm_node, queue_list, node) {
+	RTE_TAILQ_FOREACH(tm_node, queue_list, node) {
 		if (tm_node->shaper_profile)
 			bw = tm_node->shaper_profile->profile.peak.rate;
 		else

@@ -34,15 +34,15 @@
  * errors in API usage.
  */
 struct mem_area {
-	TAILQ_ENTRY(mem_area) next;
+	RTE_TAILQ_ENTRY(mem_area) next;
 	void *addr;
 	size_t len;
 	int fd;
 };
-TAILQ_HEAD(mem_area_head, mem_area);
+RTE_TAILQ_HEAD(mem_area_head, mem_area);
 /* local per-process tailq */
 static struct mem_area_head mem_area_tailq =
-	TAILQ_HEAD_INITIALIZER(mem_area_tailq);
+	RTE_TAILQ_HEAD_INITIALIZER(mem_area_tailq);
 static rte_spinlock_t mem_area_lock = RTE_SPINLOCK_INITIALIZER;
 
 /*
@@ -799,7 +799,7 @@ rte_fbarray_init(struct rte_fbarray *arr, const char *name, unsigned int len,
 	ma->fd = fd;
 
 	/* do not close fd - keep it until detach/destroy */
-	TAILQ_INSERT_TAIL(&mem_area_tailq, ma, next);
+	RTE_TAILQ_INSERT_TAIL(&mem_area_tailq, ma, next);
 
 	/* initialize the data */
 	memset(data, 0, mmap_len);
@@ -870,7 +870,7 @@ rte_fbarray_attach(struct rte_fbarray *arr)
 	/* check the tailq - maybe user has already mapped this address space */
 	rte_spinlock_lock(&mem_area_lock);
 
-	TAILQ_FOREACH(tmp, &mem_area_tailq, next) {
+	RTE_TAILQ_FOREACH(tmp, &mem_area_tailq, next) {
 		if (overlap(tmp, arr->data, mmap_len)) {
 			rte_errno = EEXIST;
 			goto fail;
@@ -902,7 +902,7 @@ rte_fbarray_attach(struct rte_fbarray *arr)
 	ma->fd = fd; /* keep fd until detach/destroy */
 	ma->len = mmap_len;
 
-	TAILQ_INSERT_TAIL(&mem_area_tailq, ma, next);
+	RTE_TAILQ_INSERT_TAIL(&mem_area_tailq, ma, next);
 
 	/* we're done */
 
@@ -947,7 +947,7 @@ rte_fbarray_detach(struct rte_fbarray *arr)
 	/* does this area exist? */
 	rte_spinlock_lock(&mem_area_lock);
 
-	TAILQ_FOREACH(tmp, &mem_area_tailq, next) {
+	RTE_TAILQ_FOREACH(tmp, &mem_area_tailq, next) {
 		if (tmp->addr == arr->data && tmp->len == mmap_len)
 			break;
 	}
@@ -962,7 +962,7 @@ rte_fbarray_detach(struct rte_fbarray *arr)
 	/* area is unmapped, close fd and remove the tailq entry */
 	if (tmp->fd >= 0)
 		close(tmp->fd);
-	TAILQ_REMOVE(&mem_area_tailq, tmp, next);
+	RTE_TAILQ_REMOVE(&mem_area_tailq, tmp, next);
 	free(tmp);
 
 	ret = 0;
@@ -1003,7 +1003,7 @@ rte_fbarray_destroy(struct rte_fbarray *arr)
 	/* does this area exist? */
 	rte_spinlock_lock(&mem_area_lock);
 
-	TAILQ_FOREACH(tmp, &mem_area_tailq, next) {
+	RTE_TAILQ_FOREACH(tmp, &mem_area_tailq, next) {
 		if (tmp->addr == arr->data && tmp->len == mmap_len)
 			break;
 	}
@@ -1046,7 +1046,7 @@ rte_fbarray_destroy(struct rte_fbarray *arr)
 	rte_mem_unmap(arr->data, mmap_len);
 
 	/* area is unmapped, remove the tailq entry */
-	TAILQ_REMOVE(&mem_area_tailq, tmp, next);
+	RTE_TAILQ_REMOVE(&mem_area_tailq, tmp, next);
 	free(tmp);
 	ret = 0;
 

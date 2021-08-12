@@ -274,7 +274,7 @@ enum i40e_flxpld_layer_idx {
  * Struct to store flow created.
  */
 struct rte_flow {
-	TAILQ_ENTRY(rte_flow) node;
+	RTE_TAILQ_ENTRY(rte_flow) node;
 	enum rte_filter_type filter_type;
 	void *rule;
 };
@@ -312,21 +312,21 @@ struct i40e_mac_filter_info {
 	struct rte_ether_addr mac_addr;
 };
 
-TAILQ_HEAD(i40e_mac_filter_list, i40e_mac_filter);
+RTE_TAILQ_HEAD(i40e_mac_filter_list, i40e_mac_filter);
 
 /* MAC filter list structure */
 struct i40e_mac_filter {
-	TAILQ_ENTRY(i40e_mac_filter) next;
+	RTE_TAILQ_ENTRY(i40e_mac_filter) next;
 	struct i40e_mac_filter_info mac_info;
 };
 
-TAILQ_HEAD(i40e_vsi_list_head, i40e_vsi_list);
+RTE_TAILQ_HEAD(i40e_vsi_list_head, i40e_vsi_list);
 
 struct i40e_vsi;
 
 /* VSI list structure */
 struct i40e_vsi_list {
-	TAILQ_ENTRY(i40e_vsi_list) list;
+	RTE_TAILQ_ENTRY(i40e_vsi_list) list;
 	struct i40e_vsi *vsi;
 };
 
@@ -707,7 +707,7 @@ struct i40e_fdir_flex_mask {
 #define I40E_MAX_FDIR_FILTER_NUM   (1024 * 8)
 
 struct i40e_fdir_filter {
-	TAILQ_ENTRY(i40e_fdir_filter) rules;
+	RTE_TAILQ_ENTRY(i40e_fdir_filter) rules;
 	struct i40e_fdir_filter_conf fdir;
 };
 
@@ -728,7 +728,7 @@ struct i40e_fdir_flow_pool {
 #define FLOW_TO_FLOW_BITMAP(f) \
 	container_of((f), struct i40e_fdir_entry, flow)
 
-TAILQ_HEAD(i40e_fdir_filter_list, i40e_fdir_filter);
+RTE_TAILQ_HEAD(i40e_fdir_filter_list, i40e_fdir_filter);
 /*
  *  A structure used to define fields of a FDIR related info.
  */
@@ -805,13 +805,13 @@ struct i40e_ethertype_filter_input {
 };
 
 struct i40e_ethertype_filter {
-	TAILQ_ENTRY(i40e_ethertype_filter) rules;
+	RTE_TAILQ_ENTRY(i40e_ethertype_filter) rules;
 	struct i40e_ethertype_filter_input input;
 	uint16_t flags;              /* Flags from RTE_ETHTYPE_FLAGS_* */
 	uint16_t queue;              /* Queue assigned to when match */
 };
 
-TAILQ_HEAD(i40e_ethertype_filter_list, i40e_ethertype_filter);
+RTE_TAILQ_HEAD(i40e_ethertype_filter_list, i40e_ethertype_filter);
 
 struct i40e_ethertype_rule {
 	struct i40e_ethertype_filter_list ethertype_list;
@@ -888,14 +888,14 @@ struct i40e_tunnel_filter_input {
 };
 
 struct i40e_tunnel_filter {
-	TAILQ_ENTRY(i40e_tunnel_filter) rules;
+	RTE_TAILQ_ENTRY(i40e_tunnel_filter) rules;
 	struct i40e_tunnel_filter_input input;
 	uint8_t is_to_vf; /* 0 - to PF, 1 - to VF */
 	uint16_t vf_id;   /* VF id, avaiblable when is_to_vf is 1. */
 	uint16_t queue; /* Queue assigned to when match */
 };
 
-TAILQ_HEAD(i40e_tunnel_filter_list, i40e_tunnel_filter);
+RTE_TAILQ_HEAD(i40e_tunnel_filter_list, i40e_tunnel_filter);
 
 struct i40e_tunnel_rule {
 	struct i40e_tunnel_filter_list tunnel_list;
@@ -969,7 +969,7 @@ struct i40e_tunnel_filter_conf {
  * Mirror rule structure
  */
 struct i40e_mirror_rule {
-	TAILQ_ENTRY(i40e_mirror_rule) rules;
+	RTE_TAILQ_ENTRY(i40e_mirror_rule) rules;
 	uint8_t rule_type;
 	uint16_t index;          /* the sw index of mirror rule */
 	uint16_t id;             /* the rule id assigned by firmware */
@@ -982,19 +982,19 @@ struct i40e_mirror_rule {
 	uint16_t entries[I40E_MIRROR_MAX_ENTRIES_PER_RULE];
 };
 
-TAILQ_HEAD(i40e_mirror_rule_list, i40e_mirror_rule);
+RTE_TAILQ_HEAD(i40e_mirror_rule_list, i40e_mirror_rule);
 
-TAILQ_HEAD(i40e_flow_list, rte_flow);
+RTE_TAILQ_HEAD(i40e_flow_list, rte_flow);
 
 /* Struct to store Traffic Manager shaper profile. */
 struct i40e_tm_shaper_profile {
-	TAILQ_ENTRY(i40e_tm_shaper_profile) node;
+	RTE_TAILQ_ENTRY(i40e_tm_shaper_profile) node;
 	uint32_t shaper_profile_id;
 	uint32_t reference_count;
 	struct rte_tm_shaper_params profile;
 };
 
-TAILQ_HEAD(i40e_shaper_profile_list, i40e_tm_shaper_profile);
+RTE_TAILQ_HEAD(i40e_shaper_profile_list, i40e_tm_shaper_profile);
 
 /* node type of Traffic Manager */
 enum i40e_tm_node_type {
@@ -1006,7 +1006,7 @@ enum i40e_tm_node_type {
 
 /* Struct to store Traffic Manager node configuration. */
 struct i40e_tm_node {
-	TAILQ_ENTRY(i40e_tm_node) node;
+	RTE_TAILQ_ENTRY(i40e_tm_node) node;
 	uint32_t id;
 	uint32_t priority;
 	uint32_t weight;
@@ -1016,7 +1016,7 @@ struct i40e_tm_node {
 	struct rte_tm_node_params params;
 };
 
-TAILQ_HEAD(i40e_tm_node_list, i40e_tm_node);
+RTE_TAILQ_HEAD(i40e_tm_node_list, i40e_tm_node);
 
 /* Struct to store all the Traffic Manager configuration. */
 struct i40e_tm_conf {
@@ -1100,11 +1100,11 @@ struct i40e_rte_flow_rss_conf {
 
 /* RSS filter list structure */
 struct i40e_rss_filter {
-	TAILQ_ENTRY(i40e_rss_filter) next;
+	RTE_TAILQ_ENTRY(i40e_rss_filter) next;
 	struct i40e_rte_flow_rss_conf rss_filter_info;
 };
 
-TAILQ_HEAD(i40e_rss_conf_list, i40e_rss_filter);
+RTE_TAILQ_HEAD(i40e_rss_conf_list, i40e_rss_filter);
 
 struct i40e_vf_msg_cfg {
 	/* maximal VF message during a statistic period */

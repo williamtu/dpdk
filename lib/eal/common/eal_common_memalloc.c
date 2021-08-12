@@ -17,14 +17,14 @@
 #include "eal_memalloc.h"
 
 struct mem_event_callback_entry {
-	TAILQ_ENTRY(mem_event_callback_entry) next;
+	RTE_TAILQ_ENTRY(mem_event_callback_entry) next;
 	char name[RTE_MEM_EVENT_CALLBACK_NAME_LEN];
 	rte_mem_event_callback_t clb;
 	void *arg;
 };
 
 struct mem_alloc_validator_entry {
-	TAILQ_ENTRY(mem_alloc_validator_entry) next;
+	RTE_TAILQ_ENTRY(mem_alloc_validator_entry) next;
 	char name[RTE_MEM_ALLOC_VALIDATOR_NAME_LEN];
 	rte_mem_alloc_validator_t clb;
 	int socket_id;
@@ -32,15 +32,15 @@ struct mem_alloc_validator_entry {
 };
 
 /** Double linked list of actions. */
-TAILQ_HEAD(mem_event_callback_entry_list, mem_event_callback_entry);
-TAILQ_HEAD(mem_alloc_validator_entry_list, mem_alloc_validator_entry);
+RTE_TAILQ_HEAD(mem_event_callback_entry_list, mem_event_callback_entry);
+RTE_TAILQ_HEAD(mem_alloc_validator_entry_list, mem_alloc_validator_entry);
 
 static struct mem_event_callback_entry_list mem_event_callback_list =
-	TAILQ_HEAD_INITIALIZER(mem_event_callback_list);
+	RTE_TAILQ_HEAD_INITIALIZER(mem_event_callback_list);
 static rte_rwlock_t mem_event_rwlock = RTE_RWLOCK_INITIALIZER;
 
 static struct mem_alloc_validator_entry_list mem_alloc_validator_list =
-	TAILQ_HEAD_INITIALIZER(mem_alloc_validator_list);
+	RTE_TAILQ_HEAD_INITIALIZER(mem_alloc_validator_list);
 static rte_rwlock_t mem_alloc_validator_rwlock = RTE_RWLOCK_INITIALIZER;
 
 static struct mem_event_callback_entry *
@@ -48,7 +48,7 @@ find_mem_event_callback(const char *name, void *arg)
 {
 	struct mem_event_callback_entry *r;
 
-	TAILQ_FOREACH(r, &mem_event_callback_list, next) {
+	RTE_TAILQ_FOREACH(r, &mem_event_callback_list, next) {
 		if (!strcmp(r->name, name) && r->arg == arg)
 			break;
 	}
@@ -60,7 +60,7 @@ find_mem_alloc_validator(const char *name, int socket_id)
 {
 	struct mem_alloc_validator_entry *r;
 
-	TAILQ_FOREACH(r, &mem_alloc_validator_list, next) {
+	RTE_TAILQ_FOREACH(r, &mem_alloc_validator_list, next) {
 		if (!strcmp(r->name, name) && r->socket_id == socket_id)
 			break;
 	}
@@ -184,7 +184,7 @@ eal_memalloc_mem_event_callback_register(const char *name,
 	entry->clb = clb;
 	entry->arg = arg;
 	strlcpy(entry->name, name, RTE_MEM_EVENT_CALLBACK_NAME_LEN);
-	TAILQ_INSERT_TAIL(&mem_event_callback_list, entry, next);
+	RTE_TAILQ_INSERT_TAIL(&mem_event_callback_list, entry, next);
 
 	ret = 0;
 
@@ -222,7 +222,7 @@ eal_memalloc_mem_event_callback_unregister(const char *name, void *arg)
 		ret = -1;
 		goto unlock;
 	}
-	TAILQ_REMOVE(&mem_event_callback_list, entry, next);
+	RTE_TAILQ_REMOVE(&mem_event_callback_list, entry, next);
 	free(entry);
 
 	ret = 0;
@@ -243,7 +243,7 @@ eal_memalloc_mem_event_notify(enum rte_mem_event event, const void *start,
 
 	rte_rwlock_read_lock(&mem_event_rwlock);
 
-	TAILQ_FOREACH(entry, &mem_event_callback_list, next) {
+	RTE_TAILQ_FOREACH(entry, &mem_event_callback_list, next) {
 		RTE_LOG(DEBUG, EAL, "Calling mem event callback '%s:%p'\n",
 			entry->name, entry->arg);
 		entry->clb(event, start, len, entry->arg);
@@ -291,7 +291,7 @@ eal_memalloc_mem_alloc_validator_register(const char *name,
 	entry->socket_id = socket_id;
 	entry->limit = limit;
 	strlcpy(entry->name, name, RTE_MEM_ALLOC_VALIDATOR_NAME_LEN);
-	TAILQ_INSERT_TAIL(&mem_alloc_validator_list, entry, next);
+	RTE_TAILQ_INSERT_TAIL(&mem_alloc_validator_list, entry, next);
 
 	ret = 0;
 
@@ -329,7 +329,7 @@ eal_memalloc_mem_alloc_validator_unregister(const char *name, int socket_id)
 		ret = -1;
 		goto unlock;
 	}
-	TAILQ_REMOVE(&mem_alloc_validator_list, entry, next);
+	RTE_TAILQ_REMOVE(&mem_alloc_validator_list, entry, next);
 	free(entry);
 
 	ret = 0;
@@ -350,7 +350,7 @@ eal_memalloc_mem_alloc_validate(int socket_id, size_t new_len)
 
 	rte_rwlock_read_lock(&mem_alloc_validator_rwlock);
 
-	TAILQ_FOREACH(entry, &mem_alloc_validator_list, next) {
+	RTE_TAILQ_FOREACH(entry, &mem_alloc_validator_list, next) {
 		if (entry->socket_id != socket_id || entry->limit > new_len)
 			continue;
 		RTE_LOG(DEBUG, EAL, "Calling mem alloc validator '%s' on socket %i\n",

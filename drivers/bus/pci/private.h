@@ -91,7 +91,7 @@ struct pci_msix_table {
  * processes, so save them in a tailq.
  */
 struct mapped_pci_resource {
-	TAILQ_ENTRY(mapped_pci_resource) next;
+	RTE_TAILQ_ENTRY(mapped_pci_resource) next;
 
 	struct rte_pci_addr pci_addr;
 	char path[PATH_MAX];
@@ -101,7 +101,7 @@ struct mapped_pci_resource {
 };
 
 /** mapped pci device list */
-TAILQ_HEAD(mapped_pci_res_list, mapped_pci_resource);
+RTE_TAILQ_HEAD(mapped_pci_res_list, mapped_pci_resource);
 
 /**
  * Map a particular resource from a file.
