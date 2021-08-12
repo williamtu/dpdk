@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <sys/queue.h>
 
 #include <rte_bus.h>
 #include <rte_class.h>
