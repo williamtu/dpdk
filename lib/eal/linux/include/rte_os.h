@@ -26,6 +26,7 @@
 #define RTE_STAILQ_HEAD(name, type) STAILQ_HEAD(name, type)
 #define RTE_STAILQ_ENTRY(type) STAILQ_ENTRY(type)
 
+
 #ifdef CPU_SETSIZE /* may require _GNU_SOURCE */
 typedef cpu_set_t rte_cpuset_t;
 #define RTE_HAS_CPUSET
