@@ -18,6 +18,7 @@
 #include <rte_errno.h>
 #include <rte_kvargs.h>
 #include <rte_log.h>
+#include <rte_os.h>
 #include <rte_tailq.h>
 #include "eal_private.h"
 
