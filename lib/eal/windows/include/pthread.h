@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <sched.h>
+#include <time.h>
 
 /**
  * This file is required to support the common code in eal_common_proc.c,
@@ -33,6 +34,10 @@ typedef void *pthread_mutexattr_t;
 typedef CRITICAL_SECTION pthread_mutex_t;
 
 typedef SYNCHRONIZATION_BARRIER pthread_barrier_t;
+
+typedef CONDITION_VARIABLE pthread_cond_t;
+
+typedef void pthread_condattr_t;
 
 #define pthread_barrier_init(barrier, attr, count) \
 	!InitializeSynchronizationBarrier(barrier, count, -1)
@@ -182,6 +187,106 @@ static inline int
 pthread_mutex_destroy(pthread_mutex_t *mutex)
 {
 	DeleteCriticalSection(mutex);
+	return 0;
+}
+
+static inline DWORD
+timespec_to_ms(const struct timespec *abstime)
+{
+	DWORD t;
+
+	if (abstime == NULL)
+		return INFINITE;
+
+	t = ((abstime->tv_sec - time(NULL)) * 1000) +
+		(abstime->tv_nsec / 1000000);
+	if (t < 0)
+		t = 1;
+	return t;
+}
+
+static inline int
+pthread_cond_init(pthread_cond_t *cond, pthread_condattr_t *attr)
+{
+	(void)attr;
+	if (cond == NULL)
+		return 1;
+	InitializeConditionVariable(cond);
+	return 0;
+}
+
+static inline int
+pthread_cond_destroy(pthread_cond_t *cond)
+{
+	/* Windows does not have a destroy for conditionals */
+	(void)cond;
+	return 0;
+}
+
+static inline int
+pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
+		const struct timespec *abstime)
+{
+	if (cond == NULL || mutex == NULL)
+		return 1;
+	if (!SleepConditionVariableCS(cond, mutex, timespec_to_ms(abstime)))
+		return 1;
+	return 0;
+}
+
+static inline int
+pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
+{
+	if (cond == NULL || mutex == NULL)
+		return 1;
+	return pthread_cond_timedwait(cond, mutex, NULL);
+}
+
+static inline int
+pthread_cond_signal(pthread_cond_t *cond)
+{
+	if (cond == NULL)
+		return 1;
+	WakeConditionVariable(cond);
+	return 0;
+}
+
+static inline int
+pthread_cond_broadcast(pthread_cond_t *cond)
+{
+	if (cond == NULL)
+		return 1;
+	WakeAllConditionVariable(cond);
+	return 0;
+}
+
+struct timezone {
+	int tz_minuteswest;
+	int tz_dsttime;
+};
+
+static inline int
+gettimeofday(struct timeval *tv, struct timezone *tz)
+{
+	if (tv) {
+		FILETIME filetime;
+		ULARGE_INTEGER x;
+		ULONGLONG usec;
+		static const ULONGLONG epoch_ofs_us = 11644473600000000ULL;
+
+		GetSystemTimePreciseAsFileTime(&filetime);
+		x.LowPart = filetime.dwLowDateTime;
+		x.HighPart = filetime.dwHighDateTime;
+		usec = x.QuadPart / 10 - epoch_ofs_us;
+		tv->tv_sec = (time_t)(usec / 1000000ULL);
+		tv->tv_usec = (long)(usec % 1000000ULL);
+	}
+	if (tz) {
+		TIME_ZONE_INFORMATION timezone;
+		GetTimeZoneInformation(&timezone);
+		tz->tz_minuteswest = timezone.Bias;
+		tz->tz_dsttime = 0;
+	}
 	return 0;
 }
 

@@ -21,7 +21,7 @@
 #include <ena_plat_dpdk.h>
 #endif
 #elif defined(_WIN32)
-#include <ena_plat_windows.h>
+#include <ena_plat_dpdk.h>
 #else
 #error "Invalid platform"
 #endif

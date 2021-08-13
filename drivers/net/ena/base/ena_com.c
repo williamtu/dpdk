@@ -1375,11 +1375,11 @@ int ena_com_execute_admin_command(struct ena_com_admin_queue *admin_queue,
 	if (IS_ERR(comp_ctx)) {
 		if (comp_ctx == ERR_PTR(ENA_COM_NO_DEVICE))
 			ena_trc_dbg(admin_queue->ena_dev,
-				    "Failed to submit command [%ld]\n",
+				    "Failed to submit command [%" PRIu64 "]\n",
 				    PTR_ERR(comp_ctx));
 		else
 			ena_trc_err(admin_queue->ena_dev,
-				    "Failed to submit command [%ld]\n",
+				    "Failed to submit command [%" PRIu64 "]\n",
 				    PTR_ERR(comp_ctx));
 
 		return (int)PTR_ERR(comp_ctx);

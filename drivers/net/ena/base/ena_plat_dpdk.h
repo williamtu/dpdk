@@ -13,6 +13,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 
 #include <rte_atomic.h>
 #include <rte_branch_prediction.h>
@@ -24,7 +25,8 @@
 #include <rte_prefetch.h>
 #include <rte_spinlock.h>
 
-#include <sys/time.h>
+#include <rte_time.h>
+#include <rte_thread.h>
 #include <rte_memcpy.h>
 
 typedef uint64_t u64;
@@ -293,9 +295,9 @@ extern rte_atomic64_t ena_alloc_cnt;
 #define dma_rmb() rmb()
 
 #define MAX_ERRNO       4095
-#define IS_ERR(x) (((unsigned long)x) >= (unsigned long)-MAX_ERRNO)
-#define ERR_PTR(error) ((void *)(long)error)
-#define PTR_ERR(error) ((long)(void *)error)
+#define IS_ERR(x) (((uintptr_t)x) >= (uintptr_t)-MAX_ERRNO)
+#define ERR_PTR(error) ((void *)(uintptr_t)error)
+#define PTR_ERR(error) ((uintptr_t)(void *)error)
 #define might_sleep()
 
 #define prefetch(x) rte_prefetch0(x)
@@ -322,7 +324,7 @@ extern rte_atomic64_t ena_alloc_cnt;
 
 #define DIV_ROUND_UP(n, d) (((n) + (d) - 1) / (d))
 
-#define ENA_FFS(x) ffs(x)
+#define ENA_FFS(x) __builtin_ffs(x)
 
 void ena_rss_key_fill(void *key, size_t size);
 

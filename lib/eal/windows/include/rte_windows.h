@@ -31,6 +31,7 @@
 #include <psapi.h>
 #include <setupapi.h>
 #include <winioctl.h>
+#include <winsock2.h>
 
 /* Have GUIDs defined. */
 #ifndef INITGUID
