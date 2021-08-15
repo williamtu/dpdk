@@ -11,6 +11,10 @@
 #include "../virtio.h"
 #include "../virtio_ring.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#define PATH_MAX MAX_PATH
+#endif
+
 enum virtio_user_backend_type {
 	VIRTIO_USER_BACKEND_UNKNOWN,
 	VIRTIO_USER_BACKEND_VHOST_USER,

@@ -220,7 +220,9 @@ static struct rte_pci_driver rte_virtio_net_pci_pmd = {
 
 RTE_INIT(rte_virtio_net_pci_pmd_init)
 {
+#if !(defined(_WIN32) || defined(_WIN64))
 	rte_eal_iopl_init();
+#endif
 	rte_pci_register(&rte_virtio_net_pci_pmd);
 }
 

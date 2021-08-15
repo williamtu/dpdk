@@ -198,7 +198,7 @@ virtio_send_command_packed(struct virtnet_ctl *cvq,
 	 * desc_is_used has a load-acquire or rte_io_rmb inside
 	 */
 	while (!desc_is_used(&desc[head], vq))
-		usleep(100);
+		rte_delay_us_sleep(100);
 
 	/* now get used descriptors */
 	vq->vq_free_cnt += nb_descs;
@@ -274,7 +274,7 @@ virtio_send_command_split(struct virtnet_ctl *cvq,
 	virtqueue_notify(vq);
 
 	while (virtqueue_nused(vq) == 0)
-		usleep(100);
+		rte_delay_us_sleep(100);
 
 	while (virtqueue_nused(vq)) {
 		uint32_t idx, desc_idx, used_idx;
