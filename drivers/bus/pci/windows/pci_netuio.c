@@ -16,7 +16,7 @@
 #include "private.h"
 #include "pci_netuio.h"
 
-static int
+int
 send_ioctl(HANDLE f, DWORD ioctl,
 	void *in_buf, DWORD in_buf_size, void *out_buf, DWORD out_buf_size)
 {

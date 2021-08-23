@@ -55,6 +55,10 @@ rte_pci_unmap_device(struct rte_pci_device *dev __rte_unused)
 	 */
 }
 
+int
+send_ioctl(HANDLE f, DWORD ioctl,
+	void *in_buf, DWORD in_buf_size, void *out_buf, DWORD out_buf_size);
+
 /* Read PCI config space. */
 int
 rte_pci_read_config(const struct rte_pci_device *dev __rte_unused,
@@ -66,7 +70,18 @@ rte_pci_read_config(const struct rte_pci_device *dev __rte_unused,
 	 * clearing the RTE_PCI_DRV_NEED_MAPPING flag
 	 * in the rte_pci_driver flags.
 	 */
-	return 0;
+	uint64_t out;
+
+	RTE_LOG(ERR, EAL, "%s: len %llu.\n", __func__, len);
+#define IOCTL_NETUIO_PCI_CONFIG_IO \
+	CTL_CODE(FILE_DEVICE_NETWORK, 52, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
+
+	if (send_ioctl(dev, IOCTL_NETUIO_PCI_CONFIG_IO,
+		NULL, 0, &out, len) != ERROR_SUCCESS) {
+			return -1;
+	}
+	memcpy(buf, &out, len);
+	return len;
 }
 
 /* Write PCI config space. */
@@ -80,7 +95,7 @@ rte_pci_write_config(const struct rte_pci_device *dev __rte_unused,
 	 * clearing the RTE_PCI_DRV_NEED_MAPPING flag
 	 * in the rte_pci_driver flags.
 	 */
-	return 0;
+	return -1;
 }
 
 enum rte_iova_mode
