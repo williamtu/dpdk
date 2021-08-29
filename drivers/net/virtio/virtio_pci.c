@@ -78,6 +78,7 @@ vtpci_msix_detect(struct rte_pci_device *dev)
 		if (cap[0] == PCI_CAP_ID_MSIX) {
 			uint16_t flags;
 
+			PMD_INIT_LOG(DEBUG,"MSIX found\n");
 			ret = rte_pci_read_config(dev, &flags, sizeof(flags),
 					pos + sizeof(cap));
 			if (ret != sizeof(flags)) {
@@ -92,8 +93,9 @@ vtpci_msix_detect(struct rte_pci_device *dev)
 			else
 				return VIRTIO_MSIX_DISABLED;
 		}
-
-		pos = cap[1];
+		break;
+//		pos = cap[1];
+		pos = 0;
 	}
 
 	return VIRTIO_MSIX_NONE;
@@ -651,6 +653,7 @@ virtio_read_caps(struct rte_pci_device *pci_dev, struct virtio_hw *hw)
 		return -1;
 	}
 
+	PMD_INIT_LOG(DEBUG,"PCI cap list at pos %d", pos);
 	while (pos) {
 		ret = rte_pci_read_config(pci_dev, &cap, 2, pos);
 		if (ret != 2) {
@@ -660,6 +663,7 @@ virtio_read_caps(struct rte_pci_device *pci_dev, struct virtio_hw *hw)
 			break;
 		}
 
+		//PMD_INIT_LOG(DEBUG,"cap 0x%x pos %d", cap, pos);
 		if (cap.cap_vndr == PCI_CAP_ID_MSIX) {
 			/* Transitional devices would also have this capability,
 			 * that's why we also check if msix is enabled.
@@ -668,6 +672,7 @@ virtio_read_caps(struct rte_pci_device *pci_dev, struct virtio_hw *hw)
 			 */
 			uint16_t flags;
 
+			PMD_INIT_LOG(DEBUG,"ID_MSIX");
 			ret = rte_pci_read_config(pci_dev, &flags, sizeof(flags),
 					pos + 2);
 			if (ret != sizeof(flags)) {

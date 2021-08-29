@@ -38,6 +38,7 @@ rte_pci_map_device(struct rte_pci_device *dev)
 	 * Devices that are bound to netuio are mapped at
 	 * the bus probing stage.
 	 */
+	return 0;
 	if (dev->kdrv == RTE_PCI_KDRV_NET_UIO)
 		return 0;
 	else
@@ -55,9 +56,29 @@ rte_pci_unmap_device(struct rte_pci_device *dev __rte_unused)
 	 */
 }
 
-int
-send_ioctl(HANDLE f, DWORD ioctl,
-	void *in_buf, DWORD in_buf_size, void *out_buf, DWORD out_buf_size);
+#pragma pack(push)
+#pragma pack(8)
+enum pci_io {
+    PCI_IO_READ = 0,
+    PCI_IO_WRITE = 1
+};
+struct dpdk_pci_config_io
+{
+    UINT32              offset; /**< offset into the device config space where the reading/writing starts */
+    UINT8               op; /**< operation type: read or write */
+    UINT32              access_size; /**< 1, 2, 4, or 8 bytes */
+
+    union dpdk_pci_config_io_data {
+        UINT8                   u8;
+        UINT16                  u16;
+        UINT32                  u32;
+        UINT64                  u64;
+    } data; /**< Data to be written, in case of write operations */
+};
+#pragma pack(pop)
+
+int netuio_send_ioctl(DWORD ioctl, void *in_buf, DWORD in_buf_size,
+			void *out_buf, DWORD out_buf_size);
 
 /* Read PCI config space. */
 int
@@ -70,17 +91,28 @@ rte_pci_read_config(const struct rte_pci_device *dev __rte_unused,
 	 * clearing the RTE_PCI_DRV_NEED_MAPPING flag
 	 * in the rte_pci_driver flags.
 	 */
-	uint64_t out;
+	uint64_t out = 0; 
+	struct dpdk_pci_config_io io;
 
-	RTE_LOG(ERR, EAL, "%s: len %llu.\n", __func__, len);
+	io.access_size = len;
+	io.op = PCI_IO_READ;
+	io.offset = offset;
+
+	RTE_LOG(ERR, EAL, "%s: len %llu offset 0x%lx.\n", __func__, len, offset);
+
 #define IOCTL_NETUIO_PCI_CONFIG_IO \
 	CTL_CODE(FILE_DEVICE_NETWORK, 52, METHOD_BUFFERED, FILE_READ_ACCESS | FILE_WRITE_ACCESS)
 
-	if (send_ioctl(dev, IOCTL_NETUIO_PCI_CONFIG_IO,
-		NULL, 0, &out, len) != ERROR_SUCCESS) {
+	if (netuio_send_ioctl(IOCTL_NETUIO_PCI_CONFIG_IO,
+		&io, sizeof(io), &out, sizeof out) != ERROR_SUCCESS) {
+
+		RTE_LOG(ERR, EAL, "%s: call netuio_send_ioctl failed.\n", __func__);
 			return -1;
 	}
+	memset(buf, 0, sizeof out);
 	memcpy(buf, &out, len);
+
+	RTE_LOG(ERR, EAL, "value 0x%llx\n", out);
 	return len;
 }
 
