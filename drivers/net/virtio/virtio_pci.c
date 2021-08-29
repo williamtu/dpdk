@@ -78,6 +78,7 @@ vtpci_msix_detect(struct rte_pci_device *dev)
 		if (cap[0] == PCI_CAP_ID_MSIX) {
 			uint16_t flags;
 
+			PMD_INIT_LOG(DEBUG,"MSIX found\n");
 			ret = rte_pci_read_config(dev, &flags, sizeof(flags),
 					pos + sizeof(cap));
 			if (ret != sizeof(flags)) {
@@ -92,7 +93,6 @@ vtpci_msix_detect(struct rte_pci_device *dev)
 			else
 				return VIRTIO_MSIX_DISABLED;
 		}
-
 		pos = cap[1];
 	}
 
@@ -651,6 +651,7 @@ virtio_read_caps(struct rte_pci_device *pci_dev, struct virtio_hw *hw)
 		return -1;
 	}
 
+	PMD_INIT_LOG(DEBUG,"PCI cap list at pos %d", pos);
 	while (pos) {
 		ret = rte_pci_read_config(pci_dev, &cap, 2, pos);
 		if (ret != 2) {
@@ -659,6 +660,16 @@ virtio_read_caps(struct rte_pci_device *pci_dev, struct virtio_hw *hw)
 				     pos, ret);
 			break;
 		}
+		PMD_INIT_LOG(DEBUG,
+			"cap.vndr 0x%x next: %x", cap.cap_vndr, cap.cap_next);
+		
+		// my lspci.exe
+		//00:05.0 Ethernet controller: Red Hat, Inc Virtio network device
+		//00: f4 1a 00 10 17 00 10 00 00 00 00 02 00 00 00 00
+		//10: 01 c0 00 00 00 00 00 c0 00 00 00 00 00 00 00 00
+		//20: 00 00 00 00 00 00 00 00 00 00 00 00 f4 1a 01 00
+		//30: 00 00 00 00 80 00 00 00 00 00 00 00 05 01 00 00
+		//80: 11 00 04 00 09 00 00 00 01 00 00 00 00 00 00 00
 
 		if (cap.cap_vndr == PCI_CAP_ID_MSIX) {
 			/* Transitional devices would also have this capability,
@@ -670,6 +681,7 @@ virtio_read_caps(struct rte_pci_device *pci_dev, struct virtio_hw *hw)
 
 			ret = rte_pci_read_config(pci_dev, &flags, sizeof(flags),
 					pos + 2);
+			PMD_INIT_LOG(DEBUG,"ID_MSIX, flag 0x%x\n", flags);
 			if (ret != sizeof(flags)) {
 				PMD_INIT_LOG(DEBUG,
 					     "failed to read pci cap at pos:"
@@ -690,6 +702,7 @@ virtio_read_caps(struct rte_pci_device *pci_dev, struct virtio_hw *hw)
 			goto next;
 		}
 
+		// sizeof(cap) is > 8-byte?
 		ret = rte_pci_read_config(pci_dev, &cap, sizeof(cap), pos);
 		if (ret != sizeof(cap)) {
 			PMD_INIT_LOG(DEBUG,

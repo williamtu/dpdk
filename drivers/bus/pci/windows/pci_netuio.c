@@ -16,17 +16,44 @@
 #include "private.h"
 #include "pci_netuio.h"
 
-int
+HANDLE netuio = INVALID_HANDLE_VALUE;
+int netuio_send_ioctl(DWORD ioctl, void *in_buf, DWORD in_buf_size,
+			void *out_buf, DWORD out_buf_size);
+static int
+send_ioctl(HANDLE f, DWORD ioctl,
+	void *in_buf, DWORD in_buf_size, void *out_buf, DWORD out_buf_size);
+
+int netuio_send_ioctl(DWORD ioctl, void *in_buf, DWORD in_buf_size,
+			void *out_buf, DWORD out_buf_size)
+{
+	BOOL res;
+
+	RTE_LOG_WIN32_ERR("enter: %s\n", __func__);
+
+	if (netuio == INVALID_HANDLE_VALUE) {
+
+		RTE_LOG_WIN32_ERR("Invalid netuio handle\n");
+		return -1;
+	}
+
+	res = send_ioctl(netuio, ioctl, in_buf, in_buf_size,
+		out_buf, out_buf_size);
+	return res;
+}
+
+static int
 send_ioctl(HANDLE f, DWORD ioctl,
 	void *in_buf, DWORD in_buf_size, void *out_buf, DWORD out_buf_size)
 {
 	BOOL res;
 	DWORD bytes_ret = 0;
 
+RTE_LOG_WIN32_ERR("enter: %s\n", __func__);
+
 	res = DeviceIoControl(f, ioctl, in_buf, in_buf_size,
 		out_buf, out_buf_size, &bytes_ret, NULL);
 	if (!res) {
-		RTE_LOG_WIN32_ERR("DeviceIoControl:IOCTL query failed");
+		RTE_LOG_WIN32_ERR("DeviceIoControl:IOCTL query failed, error %lu", GetLastError());
 		return -1;
 	}
 
@@ -121,7 +148,7 @@ get_netuio_device_info(HDEVINFO dev_info, PSP_DEVINFO_DATA dev_info_data,
 	int ret = -1;
 	HDEVINFO di_set = INVALID_HANDLE_VALUE;
 	PSP_DEVICE_INTERFACE_DETAIL_DATA dev_ifx_detail = NULL;
-	HANDLE netuio = INVALID_HANDLE_VALUE;
+	//HANDLE netuio = INVALID_HANDLE_VALUE;
 	struct device_info hw_info = { 0 };
 	unsigned int idx;
 

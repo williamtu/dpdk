@@ -353,7 +353,7 @@ virtio_read_caps(struct rte_pci_device *dev, struct virtio_crypto_hw *hw)
 		return -1;
 	}
 
-	ret = rte_pci_read_config(dev, &pos, 1, PCI_CAPABILITY_LIST);
+	ret = rte_pci_read_config(dev, &pos, 1, PCI_CAPABILITY_LIST); //0x34
 	if (ret < 0) {
 		VIRTIO_CRYPTO_INIT_LOG_DBG("failed to read pci capability list");
 		return -1;
