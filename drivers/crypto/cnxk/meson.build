@@ -11,6 +11,7 @@ endif
 sources = files(
         'cn9k_cryptodev.c',
         'cn9k_cryptodev_ops.c',
+        'cn9k_ipsec.c',
         'cn10k_cryptodev.c',
         'cn10k_cryptodev_ops.c',
         'cn10k_ipsec.c',
@@ -20,6 +21,6 @@ sources = files(
         'cnxk_cryptodev_sec.c',
 )
 
-deps += ['bus_pci', 'common_cnxk', 'security']
+deps += ['bus_pci', 'common_cnxk', 'security', 'eventdev']
 
 includes += include_directories('../../../lib/net')

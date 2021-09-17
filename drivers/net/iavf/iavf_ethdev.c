@@ -574,13 +574,14 @@ iavf_init_rxq(struct rte_eth_dev *dev, struct iavf_rx_queue *rxq)
 {
 	struct iavf_hw *hw = IAVF_DEV_PRIVATE_TO_HW(dev->data->dev_private);
 	struct rte_eth_dev_data *dev_data = dev->data;
-	uint16_t buf_size, max_pkt_len, len;
+	uint16_t buf_size, max_pkt_len;
 
 	buf_size = rte_pktmbuf_data_room_size(rxq->mp) - RTE_PKTMBUF_HEADROOM;
 
 	/* Calculate the maximum packet length allowed */
-	len = rxq->rx_buf_len * IAVF_MAX_CHAINED_RX_BUFFERS;
-	max_pkt_len = RTE_MIN(len, dev->data->dev_conf.rxmode.max_rx_pkt_len);
+	max_pkt_len = RTE_MIN((uint32_t)
+			rxq->rx_buf_len * IAVF_MAX_CHAINED_RX_BUFFERS,
+			dev->data->dev_conf.rxmode.max_rx_pkt_len);
 
 	/* Check if the jumbo frame and maximum packet length are set
 	 * correctly.
@@ -1485,24 +1486,14 @@ iavf_dev_set_default_mac_addr(struct rte_eth_dev *dev,
 	ret = iavf_add_del_eth_addr(adapter, old_addr, false, VIRTCHNL_ETHER_ADDR_PRIMARY);
 	if (ret)
 		PMD_DRV_LOG(ERR, "Fail to delete old MAC:"
-			    " %02X:%02X:%02X:%02X:%02X:%02X",
-			    old_addr->addr_bytes[0],
-			    old_addr->addr_bytes[1],
-			    old_addr->addr_bytes[2],
-			    old_addr->addr_bytes[3],
-			    old_addr->addr_bytes[4],
-			    old_addr->addr_bytes[5]);
+			    RTE_ETHER_ADDR_PRT_FMT,
+				RTE_ETHER_ADDR_BYTES(old_addr));
 
 	ret = iavf_add_del_eth_addr(adapter, mac_addr, true, VIRTCHNL_ETHER_ADDR_PRIMARY);
 	if (ret)
 		PMD_DRV_LOG(ERR, "Fail to add new MAC:"
-			    " %02X:%02X:%02X:%02X:%02X:%02X",
-			    mac_addr->addr_bytes[0],
-			    mac_addr->addr_bytes[1],
-			    mac_addr->addr_bytes[2],
-			    mac_addr->addr_bytes[3],
-			    mac_addr->addr_bytes[4],
-			    mac_addr->addr_bytes[5]);
+			    RTE_ETHER_ADDR_PRT_FMT,
+				RTE_ETHER_ADDR_BYTES(mac_addr));
 
 	if (ret)
 		return -EIO;

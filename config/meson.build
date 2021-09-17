@@ -61,7 +61,8 @@ if not is_windows
             get_option('libdir'), pmd_subdir_opt)
 elif meson.version().version_compare('>=0.55.0')
     # 0.55.0 is required to use external program with add_install_script
-    meson.add_install_script(py3, '../buildtools/symlink-drivers-solibs.py',
+    meson.add_install_script(py3,
+            files('../buildtools/symlink-drivers-solibs.py'),
             get_option('libdir'), pmd_subdir_opt, get_option('bindir'))
 endif
 
@@ -339,7 +340,8 @@ if is_freebsd
 endif
 
 if is_windows
-    # VirtualAlloc2() is available since Windows 10 / Server 2016.
+    # VirtualAlloc2() is available since Windows 10 / Server 2019.
+    # It's essential for EAL, so we don't support older versions.
     add_project_arguments('-D_WIN32_WINNT=0x0A00', language: 'c')
 
     # Use MinGW-w64 stdio, because DPDK assumes ANSI-compliant formatting.
@@ -351,17 +353,6 @@ if is_windows
     if cc.get_id() == 'clang'
         add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: 'c')
     endif
-
-    add_project_link_arguments('-lws2_32', language: 'c')
-
-    # Contrary to docs, VirtualAlloc2() is exported by mincore.lib
-    # in Windows SDK, while MinGW exports it by advapi32.a.
-    if is_ms_linker
-        add_project_link_arguments('-lmincore', language: 'c')
-    endif
-
-    add_project_link_arguments('-ladvapi32', '-lsetupapi', language: 'c')
-    add_project_link_arguments('-ldbghelp', language: 'c')
 endif
 
 if get_option('b_lto')

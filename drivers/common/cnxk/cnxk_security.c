@@ -6,12 +6,45 @@
 
 #include "cnxk_security.h"
 
+#include "roc_api.h"
+
+static void
+ipsec_hmac_opad_ipad_gen(struct rte_crypto_sym_xform *auth_xform,
+			 uint8_t *hmac_opad_ipad)
+{
+	const uint8_t *key = auth_xform->auth.key.data;
+	uint32_t length = auth_xform->auth.key.length;
+	uint8_t opad[128] = {[0 ... 127] = 0x5c};
+	uint8_t ipad[128] = {[0 ... 127] = 0x36};
+	uint32_t i;
+
+	/* HMAC OPAD and IPAD */
+	for (i = 0; i < 127 && i < length; i++) {
+		opad[i] = opad[i] ^ key[i];
+		ipad[i] = ipad[i] ^ key[i];
+	}
+
+	/* Precompute hash of HMAC OPAD and IPAD to avoid
+	 * per packet computation
+	 */
+	switch (auth_xform->auth.algo) {
+	case RTE_CRYPTO_AUTH_SHA1_HMAC:
+		roc_hash_sha1_gen(opad, (uint32_t *)&hmac_opad_ipad[0]);
+		roc_hash_sha1_gen(ipad, (uint32_t *)&hmac_opad_ipad[24]);
+		break;
+	default:
+		break;
+	}
+}
+
 static int
 ot_ipsec_sa_common_param_fill(union roc_ot_ipsec_sa_word2 *w2,
 			      uint8_t *cipher_key, uint8_t *salt_key,
+			      uint8_t *hmac_opad_ipad,
 			      struct rte_security_ipsec_xform *ipsec_xfrm,
 			      struct rte_crypto_sym_xform *crypto_xfrm)
 {
+	struct rte_crypto_sym_xform *auth_xfrm, *cipher_xfrm;
 	const uint8_t *key;
 	uint32_t *tmp_salt;
 	uint64_t *tmp_key;
@@ -20,10 +53,14 @@ ot_ipsec_sa_common_param_fill(union roc_ot_ipsec_sa_word2 *w2,
 	/* Set direction */
 	switch (ipsec_xfrm->direction) {
 	case RTE_SECURITY_IPSEC_SA_DIR_INGRESS:
-		w2->s.dir = ROC_IE_OT_SA_DIR_INBOUND;
+		w2->s.dir = ROC_IE_SA_DIR_INBOUND;
+		auth_xfrm = crypto_xfrm;
+		cipher_xfrm = crypto_xfrm->next;
 		break;
 	case RTE_SECURITY_IPSEC_SA_DIR_EGRESS:
-		w2->s.dir = ROC_IE_OT_SA_DIR_OUTBOUND;
+		w2->s.dir = ROC_IE_SA_DIR_OUTBOUND;
+		cipher_xfrm = crypto_xfrm;
+		auth_xfrm = crypto_xfrm->next;
 		break;
 	default:
 		return -EINVAL;
@@ -32,10 +69,10 @@ ot_ipsec_sa_common_param_fill(union roc_ot_ipsec_sa_word2 *w2,
 	/* Set protocol - ESP vs AH */
 	switch (ipsec_xfrm->proto) {
 	case RTE_SECURITY_IPSEC_SA_PROTO_ESP:
-		w2->s.protocol = ROC_IE_OT_SA_PROTOCOL_ESP;
+		w2->s.protocol = ROC_IE_SA_PROTOCOL_ESP;
 		break;
 	case RTE_SECURITY_IPSEC_SA_PROTO_AH:
-		w2->s.protocol = ROC_IE_OT_SA_PROTOCOL_AH;
+		w2->s.protocol = ROC_IE_SA_PROTOCOL_AH;
 		break;
 	default:
 		return -EINVAL;
@@ -44,10 +81,10 @@ ot_ipsec_sa_common_param_fill(union roc_ot_ipsec_sa_word2 *w2,
 	/* Set mode - transport vs tunnel */
 	switch (ipsec_xfrm->mode) {
 	case RTE_SECURITY_IPSEC_SA_MODE_TRANSPORT:
-		w2->s.mode = ROC_IE_OT_SA_MODE_TRANSPORT;
+		w2->s.mode = ROC_IE_SA_MODE_TRANSPORT;
 		break;
 	case RTE_SECURITY_IPSEC_SA_MODE_TUNNEL:
-		w2->s.mode = ROC_IE_OT_SA_MODE_TUNNEL;
+		w2->s.mode = ROC_IE_SA_MODE_TUNNEL;
 		break;
 	default:
 		return -EINVAL;
@@ -70,7 +107,32 @@ ot_ipsec_sa_common_param_fill(union roc_ot_ipsec_sa_word2 *w2,
 			return -ENOTSUP;
 		}
 	} else {
-		return -ENOTSUP;
+		switch (cipher_xfrm->cipher.algo) {
+		case RTE_CRYPTO_CIPHER_AES_CBC:
+			w2->s.enc_type = ROC_IE_OT_SA_ENC_AES_CBC;
+			break;
+		default:
+			return -ENOTSUP;
+		}
+
+		switch (auth_xfrm->auth.algo) {
+		case RTE_CRYPTO_AUTH_SHA1_HMAC:
+			w2->s.auth_type = ROC_IE_OT_SA_AUTH_SHA1;
+			break;
+		default:
+			return -ENOTSUP;
+		}
+
+		key = cipher_xfrm->cipher.key.data;
+		length = cipher_xfrm->cipher.key.length;
+
+		ipsec_hmac_opad_ipad_gen(auth_xfrm, hmac_opad_ipad);
+
+		tmp_key = (uint64_t *)hmac_opad_ipad;
+		for (i = 0;
+		     i < (int)(ROC_CTX_MAX_OPAD_IPAD_LEN / sizeof(uint64_t));
+		     i++)
+			tmp_key[i] = rte_be_to_cpu_64(tmp_key[i]);
 	}
 
 	/* Set encapsulation type */
@@ -87,13 +149,13 @@ ot_ipsec_sa_common_param_fill(union roc_ot_ipsec_sa_word2 *w2,
 
 	switch (length) {
 	case ROC_CPT_AES128_KEY_LEN:
-		w2->s.aes_key_len = ROC_IE_OT_SA_AES_KEY_LEN_128;
+		w2->s.aes_key_len = ROC_IE_SA_AES_KEY_LEN_128;
 		break;
 	case ROC_CPT_AES192_KEY_LEN:
-		w2->s.aes_key_len = ROC_IE_OT_SA_AES_KEY_LEN_192;
+		w2->s.aes_key_len = ROC_IE_SA_AES_KEY_LEN_192;
 		break;
 	case ROC_CPT_AES256_KEY_LEN:
-		w2->s.aes_key_len = ROC_IE_OT_SA_AES_KEY_LEN_256;
+		w2->s.aes_key_len = ROC_IE_SA_AES_KEY_LEN_256;
 		break;
 	default:
 		return -EINVAL;
@@ -129,7 +191,8 @@ cnxk_ot_ipsec_inb_sa_fill(struct roc_ot_ipsec_inb_sa *sa,
 
 	w2.u64 = 0;
 	rc = ot_ipsec_sa_common_param_fill(&w2, sa->cipher_key, sa->w8.s.salt,
-					   ipsec_xfrm, crypto_xfrm);
+					   sa->hmac_opad_ipad, ipsec_xfrm,
+					   crypto_xfrm);
 	if (rc)
 		return rc;
 
@@ -196,7 +259,8 @@ cnxk_ot_ipsec_outb_sa_fill(struct roc_ot_ipsec_outb_sa *sa,
 
 	w2.u64 = 0;
 	rc = ot_ipsec_sa_common_param_fill(&w2, sa->cipher_key, sa->iv.s.salt,
-					   ipsec_xfrm, crypto_xfrm);
+					   sa->hmac_opad_ipad, ipsec_xfrm,
+					   crypto_xfrm);
 	if (rc)
 		return rc;
 
@@ -209,7 +273,7 @@ cnxk_ot_ipsec_outb_sa_fill(struct roc_ot_ipsec_outb_sa *sa,
 	/* Tunnel header info */
 	switch (tunnel->type) {
 	case RTE_SECURITY_IPSEC_TUNNEL_IPV4:
-		sa->w2.s.outer_ip_ver = ROC_IE_OT_SA_IP_VERSION_4;
+		sa->w2.s.outer_ip_ver = ROC_IE_SA_IP_VERSION_4;
 		memcpy(&sa->outer_hdr.ipv4.src_addr, &tunnel->ipv4.src_ip,
 		       sizeof(struct in_addr));
 		memcpy(&sa->outer_hdr.ipv4.dst_addr, &tunnel->ipv4.dst_ip,
@@ -240,7 +304,7 @@ cnxk_ot_ipsec_outb_sa_fill(struct roc_ot_ipsec_outb_sa *sa,
 		}
 		break;
 	case RTE_SECURITY_IPSEC_TUNNEL_IPV6:
-		sa->w2.s.outer_ip_ver = ROC_IE_OT_SA_IP_VERSION_6;
+		sa->w2.s.outer_ip_ver = ROC_IE_SA_IP_VERSION_6;
 		memcpy(&sa->outer_hdr.ipv6.src_addr, &tunnel->ipv6.src_addr,
 		       sizeof(struct in6_addr));
 		memcpy(&sa->outer_hdr.ipv6.dst_addr, &tunnel->ipv6.dst_addr,

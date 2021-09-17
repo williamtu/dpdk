@@ -16,7 +16,6 @@
 
 #include <rte_crypto.h>
 #include <rte_cryptodev.h>
-#include <rte_cryptodev_pmd.h>
 #include <rte_string_fns.h>
 
 #ifdef RTE_CRYPTO_SCHEDULER
@@ -8769,6 +8768,50 @@ test_PDCP_SDAP_PROTO_encap_all(void)
 }
 
 static int
+test_PDCP_PROTO_short_mac(void)
+{
+	int i = 0, size = 0;
+	int err, all_err = TEST_SUCCESS;
+	const struct pdcp_short_mac_test *cur_test;
+
+	size = RTE_DIM(list_pdcp_smac_tests);
+
+	for (i = 0; i < size; i++) {
+		cur_test = &list_pdcp_smac_tests[i];
+		err = test_pdcp_proto(
+			i, 0, RTE_CRYPTO_CIPHER_OP_ENCRYPT,
+			RTE_CRYPTO_AUTH_OP_GENERATE, cur_test->data_in,
+			cur_test->in_len, cur_test->data_out,
+			cur_test->in_len + ((cur_test->auth_key) ? 4 : 0),
+			RTE_CRYPTO_CIPHER_NULL, NULL,
+			0, cur_test->param.auth_alg,
+			cur_test->auth_key, cur_test->param.auth_key_len,
+			0, cur_test->param.domain, 0, 0,
+			0, 0, 0);
+		if (err) {
+			printf("\t%d) %s: Short MAC test failed\n",
+					cur_test->test_idx,
+					cur_test->param.name);
+			err = TEST_FAILED;
+		} else {
+			printf("\t%d) %s: Short MAC test PASS\n",
+					cur_test->test_idx,
+					cur_test->param.name);
+			rte_hexdump(stdout, "MAC I",
+				    cur_test->data_out + cur_test->in_len + 2,
+				    2);
+			err = TEST_SUCCESS;
+		}
+		all_err += err;
+	}
+
+	printf("Success: %d, Failure: %d\n", size + all_err, -all_err);
+
+	return (all_err == TEST_SUCCESS) ? TEST_SUCCESS : TEST_FAILED;
+
+}
+
+static int
 test_PDCP_SDAP_PROTO_decap_all(void)
 {
 	int i = 0, size = 0;
@@ -13475,31 +13518,32 @@ test_scheduler_attach_worker_op(void)
 {
 	struct crypto_testsuite_params *ts_params = &testsuite_params;
 	uint8_t sched_id = ts_params->valid_devs[0];
-	uint32_t nb_devs, i, nb_devs_attached = 0;
+	uint32_t i, nb_devs_attached = 0;
 	int ret;
 	char vdev_name[32];
+	unsigned int count = rte_cryptodev_count();
 
-	/* create 2 AESNI_MB if necessary */
-	nb_devs = rte_cryptodev_device_count_by_driver(
-			rte_cryptodev_driver_id_get(
-			RTE_STR(CRYPTODEV_NAME_AESNI_MB_PMD)));
-	if (nb_devs < 2) {
-		for (i = nb_devs; i < 2; i++) {
-			snprintf(vdev_name, sizeof(vdev_name), "%s_%u",
-					RTE_STR(CRYPTODEV_NAME_AESNI_MB_PMD),
-					i);
-			ret = rte_vdev_init(vdev_name, NULL);
+	/* create 2 AESNI_MB vdevs on top of existing devices */
+	for (i = count; i < count + 2; i++) {
+		snprintf(vdev_name, sizeof(vdev_name), "%s_%u",
+				RTE_STR(CRYPTODEV_NAME_AESNI_MB_PMD),
+				i);
+		ret = rte_vdev_init(vdev_name, NULL);
 
-			TEST_ASSERT(ret == 0,
-				"Failed to create instance %u of"
-				" pmd : %s",
-				i, RTE_STR(CRYPTODEV_NAME_AESNI_MB_PMD));
+		TEST_ASSERT(ret == 0,
+			"Failed to create instance %u of"
+			" pmd : %s",
+			i, RTE_STR(CRYPTODEV_NAME_AESNI_MB_PMD));
+
+		if (ret < 0) {
+			RTE_LOG(ERR, USER1,
+				"Failed to create 2 AESNI MB PMDs.\n");
+			return TEST_SKIPPED;
 		}
 	}
 
 	/* attach 2 AESNI_MB cdevs */
-	for (i = 0; i < rte_cryptodev_count() && nb_devs_attached < 2;
-			i++) {
+	for (i = count; i < count + 2; i++) {
 		struct rte_cryptodev_info info;
 		unsigned int session_size;
 
@@ -14040,6 +14084,8 @@ static struct unit_test_suite cryptodev_snow3g_testsuite  = {
 			test_snow3g_encryption_test_case_5),
 
 		TEST_CASE_ST(ut_setup, ut_teardown,
+			test_PDCP_PROTO_short_mac),
+		TEST_CASE_ST(ut_setup, ut_teardown,
 			test_snow3g_encryption_test_case_1_oop),
 		TEST_CASE_ST(ut_setup, ut_teardown,
 			test_snow3g_encryption_test_case_1_oop_sgl),
@@ -14279,6 +14325,8 @@ static struct unit_test_suite cryptodev_kasumi_testsuite  = {
 		TEST_CASE_ST(ut_setup, ut_teardown,
 			test_kasumi_decryption_test_case_1_oop),
 
+		TEST_CASE_ST(ut_setup, ut_teardown,
+			test_PDCP_PROTO_short_mac),
 		TEST_CASE_ST(ut_setup, ut_teardown,
 			test_kasumi_cipher_auth_test_case_1),
 

@@ -376,7 +376,7 @@ print_link_info(struct link *link, char *out, size_t out_size)
 	snprintf(out, out_size,
 		"\n"
 		"%s: flags=<%s> mtu %u\n"
-		"\tether %02X:%02X:%02X:%02X:%02X:%02X rxqueues %u txqueues %u\n"
+		"\tether " RTE_ETHER_ADDR_PRT_FMT " rxqueues %u txqueues %u\n"
 		"\tport# %u  speed %s\n"
 		"\tRX packets %" PRIu64"  bytes %" PRIu64"\n"
 		"\tRX errors %" PRIu64"  missed %" PRIu64"  no-mbuf %" PRIu64"\n"
@@ -385,9 +385,7 @@ print_link_info(struct link *link, char *out, size_t out_size)
 		link->name,
 		eth_link.link_status == 0 ? "DOWN" : "UP",
 		mtu,
-		mac_addr.addr_bytes[0], mac_addr.addr_bytes[1],
-		mac_addr.addr_bytes[2], mac_addr.addr_bytes[3],
-		mac_addr.addr_bytes[4], mac_addr.addr_bytes[5],
+		RTE_ETHER_ADDR_BYTES(&mac_addr),
 		link->n_rxq,
 		link->n_txq,
 		link->port_id,
