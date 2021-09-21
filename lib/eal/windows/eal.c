@@ -125,7 +125,6 @@ eal_log_level_parse(int argc, char **argv)
 		if (ret < 0)
 			break;
 	}
-
 	optind = 0; /* reset getopt lib */
 }
 
@@ -372,12 +371,15 @@ rte_eal_init(int argc, char **argv)
 	__rte_thread_init(config->main_lcore,
 		&lcore_config[config->main_lcore].cpuset);
 
+	rte_eal_init_alert("init PCI");
+	// here testpmd found 1 device, but OVS does not!
 	bscan = rte_bus_scan();
 	if (bscan < 0) {
 		rte_eal_init_alert("Cannot init PCI");
 		rte_errno = ENODEV;
 		return -1;
 	}
+	rte_eal_init_alert("init PCI done");
 
 	RTE_LCORE_FOREACH_WORKER(i) {
 
@@ -407,11 +409,13 @@ rte_eal_init(int argc, char **argv)
 		return -1;
 	}
 
+	rte_eal_init_alert("probe devices");
 	if (rte_bus_probe()) {
 		rte_eal_init_alert("Cannot probe devices");
 		rte_errno = ENOTSUP;
 		return -1;
 	}
+	rte_eal_init_alert("probe devices done");
 
 	/*
 	 * Launch a dummy function on all worker lcores, so that main lcore

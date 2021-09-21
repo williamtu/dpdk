@@ -3877,11 +3877,16 @@ main(int argc, char** argv)
 		rte_exit(EXIT_FAILURE, "Cannot register log type");
 	rte_log_set_level(testpmd_logtype, RTE_LOG_DEBUG);
 
+	int i;
+	for (i = 0; i < argc; i++) {
+		TESTPMD_LOG(WARNING, "ARGV %s\n", argv[i]);
+	}
 	diag = rte_eal_init(argc, argv);
 	if (diag < 0)
 		rte_exit(EXIT_FAILURE, "Cannot init EAL: %s\n",
 			 rte_strerror(rte_errno));
 
+	TESTPMD_LOG(WARNING, "init EAL done\n");
 	ret = register_eth_event_callback();
 	if (ret != 0)
 		rte_exit(EXIT_FAILURE, "Cannot register for ethdev events");
@@ -3900,6 +3905,7 @@ main(int argc, char** argv)
 	if (nb_ports == 0)
 		TESTPMD_LOG(WARNING, "No probed ethernet devices\n");
 
+	TESTPMD_LOG(WARNING, "port count %d\n", count);
 	/* allocate port structures, and init them */
 	init_port();
 

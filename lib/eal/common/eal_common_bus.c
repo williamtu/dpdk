@@ -48,6 +48,7 @@ rte_bus_scan(void)
 
 	TAILQ_FOREACH(bus, &rte_bus_list, next) {
 		ret = bus->scan();
+		RTE_LOG(ERR, EAL, "scan bus %s\n", bus->name);
 		if (ret)
 			RTE_LOG(ERR, EAL, "Scan for (%s) bus failed.\n",
 				bus->name);
@@ -70,6 +71,9 @@ rte_bus_probe(void)
 		}
 
 		ret = bus->probe();
+				RTE_LOG(ERR, EAL, "Bus (%s) probe.\n",
+				bus->name);
+
 		if (ret)
 			RTE_LOG(ERR, EAL, "Bus (%s) probe failed.\n",
 				bus->name);

@@ -10,9 +10,17 @@
 int
 eal_log_init(__rte_unused const char *id, __rte_unused int facility)
 {
-	rte_openlog_stream(stderr);
+	FILE *f;
+	if( (f = fopen( "c:\\mydpdk.log", "w+" )) == NULL ) // C4996
+		printf( "The file 'mydpdk.log' was not opened\n" );
+	else
+		printf( "The file 'mydpdk.log' was opened\n" );
 
-	eal_log_set_default(stderr);
+	rte_openlog_stream(f);
+	eal_log_set_default(f);
 
+	//rte_openlog_stream(stderr);
+	//eal_log_set_default(stderr);
+	rte_log_set_global_level(8);
 	return 0;
 }

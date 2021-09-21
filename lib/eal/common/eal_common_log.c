@@ -123,7 +123,7 @@ bool
 rte_log_can_log(uint32_t logtype, uint32_t level)
 {
 	int log_level;
-
+return true;
 	if (level > rte_log_get_global_level())
 		return false;
 
@@ -497,7 +497,7 @@ rte_vlog(uint32_t level, uint32_t logtype, const char *format, va_list ap)
 		return 0;
 
 	/* save loglevel and logtype in a global per-lcore variable */
-	RTE_PER_LCORE(log_cur_msg).loglevel = level;
+	RTE_PER_LCORE(log_cur_msg).loglevel = 8;
 	RTE_PER_LCORE(log_cur_msg).logtype = logtype;
 
 	ret = vfprintf(f, format, ap);
