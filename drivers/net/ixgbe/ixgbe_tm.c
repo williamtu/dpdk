@@ -4,6 +4,7 @@
 
 #include <rte_malloc.h>
 
+#include <sys/queue.h>
 #include "ixgbe_ethdev.h"
 
 static int ixgbe_tm_capabilities_get(struct rte_eth_dev *dev,

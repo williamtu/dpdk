@@ -173,7 +173,7 @@ struct ixgbe_hw_fdir_mask {
 };
 
 struct ixgbe_fdir_filter {
-	TAILQ_ENTRY(ixgbe_fdir_filter) entries;
+	RTE_TAILQ_ENTRY(ixgbe_fdir_filter) entries;
 	union ixgbe_atr_input ixgbe_fdir; /* key of fdir filter*/
 	uint32_t fdirflags; /* drop or forward */
 	uint32_t fdirhash; /* hash value for fdir */
@@ -181,7 +181,7 @@ struct ixgbe_fdir_filter {
 };
 
 /* list of fdir filters */
-TAILQ_HEAD(ixgbe_fdir_filter_list, ixgbe_fdir_filter);
+RTE_TAILQ_HEAD(ixgbe_fdir_filter_list, ixgbe_fdir_filter);
 
 struct ixgbe_fdir_rule {
 	struct ixgbe_hw_fdir_mask mask;
@@ -286,7 +286,7 @@ enum ixgbe_5tuple_protocol {
 	IXGBE_FILTER_PROTOCOL_NONE,
 };
 
-TAILQ_HEAD(ixgbe_5tuple_filter_list, ixgbe_5tuple_filter);
+RTE_TAILQ_HEAD(ixgbe_5tuple_filter_list, ixgbe_5tuple_filter);
 
 struct ixgbe_5tuple_filter_info {
 	uint32_t dst_ip;
@@ -305,7 +305,7 @@ struct ixgbe_5tuple_filter_info {
 
 /* 5tuple filter structure */
 struct ixgbe_5tuple_filter {
-	TAILQ_ENTRY(ixgbe_5tuple_filter) entries;
+	RTE_TAILQ_ENTRY(ixgbe_5tuple_filter) entries;
 	uint16_t index;       /* the index of 5tuple filter */
 	struct ixgbe_5tuple_filter_info filter_info;
 	uint16_t queue;       /* rx queue assigned to */
@@ -348,12 +348,12 @@ struct ixgbe_l2_tn_key {
 };
 
 struct ixgbe_l2_tn_filter {
-	TAILQ_ENTRY(ixgbe_l2_tn_filter)    entries;
+	RTE_TAILQ_ENTRY(ixgbe_l2_tn_filter)    entries;
 	struct ixgbe_l2_tn_key             key;
 	uint32_t                           pool;
 };
 
-TAILQ_HEAD(ixgbe_l2_tn_filter_list, ixgbe_l2_tn_filter);
+RTE_TAILQ_HEAD(ixgbe_l2_tn_filter_list, ixgbe_l2_tn_filter);
 
 struct ixgbe_l2_tn_info {
 	struct ixgbe_l2_tn_filter_list      l2_tn_list;
@@ -414,13 +414,13 @@ struct ixgbe_bw_conf {
 
 /* Struct to store Traffic Manager shaper profile. */
 struct ixgbe_tm_shaper_profile {
-	TAILQ_ENTRY(ixgbe_tm_shaper_profile) node;
+	RTE_TAILQ_ENTRY(ixgbe_tm_shaper_profile) node;
 	uint32_t shaper_profile_id;
 	uint32_t reference_count;
 	struct rte_tm_shaper_params profile;
 };
 
-TAILQ_HEAD(ixgbe_shaper_profile_list, ixgbe_tm_shaper_profile);
+RTE_TAILQ_HEAD(ixgbe_shaper_profile_list, ixgbe_tm_shaper_profile);
 
 /* node type of Traffic Manager */
 enum ixgbe_tm_node_type {
@@ -432,7 +432,7 @@ enum ixgbe_tm_node_type {
 
 /* Struct to store Traffic Manager node configuration. */
 struct ixgbe_tm_node {
-	TAILQ_ENTRY(ixgbe_tm_node) node;
+	RTE_TAILQ_ENTRY(ixgbe_tm_node) node;
 	uint32_t id;
 	uint32_t priority;
 	uint32_t weight;
@@ -443,7 +443,7 @@ struct ixgbe_tm_node {
 	struct rte_tm_node_params params;
 };
 
-TAILQ_HEAD(ixgbe_tm_node_list, ixgbe_tm_node);
+RTE_TAILQ_HEAD(ixgbe_tm_node_list, ixgbe_tm_node);
 
 /* The configuration of Traffic Manager */
 struct ixgbe_tm_conf {

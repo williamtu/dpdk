@@ -5,6 +5,7 @@
 #include <rte_string_fns.h>
 #include <rte_malloc.h>
 
+#include <sys/queue.h>
 #include "cryptodev_pmd.h"
 
 /**
