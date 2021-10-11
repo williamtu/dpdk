@@ -30,6 +30,10 @@
 #define write(fd, buf, n) _write(fd, buf, n)
 #define close(fd) _close(fd)
 #define unlink(path) _unlink(path)
+#define fdopen(fd, opt) _fdopen(fd, opt)
+#define dup(fd) _dup(fd)
+#define popen(cmd, b) _popen(cmd, b)
+#define pclose(cmd) _pclose(cmd)
 
 #define IPVERSION	4
 

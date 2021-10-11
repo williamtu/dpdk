@@ -135,6 +135,7 @@ fs_mutex_init(struct fs_priv *priv)
 	int ret;
 	pthread_mutexattr_t attr;
 
+#ifndef RTE_EXEC_ENV_WINDOWS
 	ret = pthread_mutexattr_init(&attr);
 	if (ret) {
 		ERROR("Cannot initiate mutex attributes - %s", strerror(ret));
@@ -146,6 +147,7 @@ fs_mutex_init(struct fs_priv *priv)
 		ERROR("Cannot set mutex type - %s", strerror(ret));
 		return ret;
 	}
+#endif
 	ret = pthread_mutex_init(&priv->hotplug_mutex, &attr);
 	if (ret) {
 		ERROR("Cannot initiate mutex - %s", strerror(ret));

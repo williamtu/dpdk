@@ -366,7 +366,12 @@ extern int failsafe_logtype;
 #define DEBUG(...) LOG_(DEBUG, __VA_ARGS__)
 #define INFO(...) LOG_(INFO, __VA_ARGS__)
 #define WARN(...) LOG_(WARNING, __VA_ARGS__)
+#ifdef ERROR
+#undef ERROR
+#endif
 #define ERROR(...) LOG_(ERR, __VA_ARGS__)
+
+#include <rte_os_shim.h>
 
 /* inlined functions */
 

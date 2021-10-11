@@ -164,11 +164,13 @@ fs_read_fd(struct sub_device *sdev, char *fd_str)
 	fd = dup(fd);
 	if (fd == -1)
 		goto error;
+#ifndef RTE_EXEC_ENV_WINDOWS
 	oflags = fcntl(fd, F_GETFL);
 	if (oflags == -1)
 		goto error;
 	if (fcntl(fd, F_SETFL, oflags | O_NONBLOCK) == -1)
 		goto error;
+#endif
 	fp = fdopen(fd, "r");
 	if (fp == NULL)
 		goto error;
@@ -220,7 +222,9 @@ fs_parse_device_param(struct rte_eth_dev *dev, const char *param,
 		return -EINVAL;
 	}
 	a += 1;
-	args = strndup(&param[a], b - a);
+	//args = strndup(&param[a], b - a);
+	args = strdup(&param[a]);
+	memset(args, 0, strlen(&param[a]) - b + a);
 	if (args == NULL) {
 		ERROR("Not enough memory for parameter parsing");
 		return -ENOMEM;

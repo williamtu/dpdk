@@ -40,6 +40,9 @@ fs_epoll_create1(int flags)
 #elif defined(BSD)
 	RTE_SET_USED(flags);
 	return -ENOTSUP;
+#else
+	RTE_SET_USED(flags);
+	return -ENOTSUP;
 #endif
 }
 

@@ -158,7 +158,7 @@ pthread_join(__rte_unused pthread_t thread,
 
 static inline int
 pthread_mutex_init(pthread_mutex_t *mutex,
-		   __rte_unused pthread_mutexattr_t *attr)
+				   __rte_unused pthread_mutexattr_t *attr)
 {
 	InitializeCriticalSection(mutex);
 	return 0;
@@ -168,6 +168,26 @@ static inline int
 pthread_mutex_lock(pthread_mutex_t *mutex)
 {
 	EnterCriticalSection(mutex);
+	return 0;
+}
+
+static inline int
+pthread_mutex_trylock(pthread_mutex_t *mutex)
+{
+    return TryEnterCriticalSection(mutex);
+}
+
+static inline int
+pthread_mutexattr_init(
+__rte_unused pthread_mutexattr_t *attr)
+{
+    return -ENOTSUP;
+}
+
+static inline int
+pthread_mutexattr_settype(__rte_unused pthread_mutexattr_t *attr,
+						  __rte_unused int type)
+{
 	return 0;
 }
 
